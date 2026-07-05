@@ -12,7 +12,7 @@
     <artifactId>ebook-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>ebook-backend</name>
-    <description>EBook Management System Backend</description>
+    <description>Library Management System Backend</description>
     <properties>
         <java.version>17</java.version>
     </properties>
