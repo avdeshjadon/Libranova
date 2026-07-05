@@ -18,7 +18,7 @@ export default function Footer() {
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#e0e1dd' }}>Quick Links</h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <li><Link to="/" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Home</Link></li>
-            <li><Link to="/cart" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>My Cart</Link></li>
+            <li><Link to="/cart" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>My Rentals</Link></li>
             <li><Link to="/login" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Login</Link></li>
             <li><Link to="/register" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Register</Link></li>
           </ul>
@@ -37,9 +37,9 @@ export default function Footer() {
         <div>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#e0e1dd' }}>Contact Us</h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <li style={{ color: '#dad7cd' }}>📍 123 Library Street, Green City</li>
-            <li><a href="tel:+919876543210" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>📞 +91 98765 43210</a></li>
-            <li><a href="mailto:support@libranova.com" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>✉️ support@libranova.com</a></li>
+            <li style={{ color: '#dad7cd' }}>Connaught Place, New Delhi, India</li>
+            <li><a href="tel:+916201979695" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>+91 6201979695</a></li>
+            <li><a href="mailto:support@libranova.com" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>support@libranova.com</a></li>
           </ul>
         </div>
       </div>
