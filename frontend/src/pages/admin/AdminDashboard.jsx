@@ -893,17 +893,37 @@ export default function AdminDashboard() {
 
       {/* Member Info Modal */}
       {selectedMemberInfo && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', width: '700px', maxWidth: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>Member Details: {selectedMemberInfo.name}</h2>
-              <button onClick={() => setSelectedMemberInfo(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#999' }}>✕</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '750px', maxWidth: '95%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <img 
+                  src={selectedMemberInfo.profilePic?.startsWith('http') ? selectedMemberInfo.profilePic : `/avatars/${selectedMemberInfo.profilePic || 'default-avatar.png'}`} 
+                  alt={selectedMemberInfo.name} 
+                  style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e0e1dd' }} 
+                  onError={(e) => { e.target.src = "https://api.dicebear.com/9.x/avataaars/svg?seed=Fallback"; }}
+                />
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: '#1a1a1a' }}>{selectedMemberInfo.name}</h2>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '13px', background: '#f3f4f6', color: '#4b5563', padding: '4px 10px', borderRadius: '20px', fontWeight: '500' }}>ID: #{selectedMemberInfo.id}</span>
+                    <span style={{ fontSize: '13px', background: selectedMemberInfo.role === 'ADMIN' ? '#fee2e2' : '#e0e7ff', color: selectedMemberInfo.role === 'ADMIN' ? '#991b1b' : '#3730a3', padding: '4px 10px', borderRadius: '20px', fontWeight: '600' }}>{selectedMemberInfo.role}</span>
+                    {selectedMemberInfo.isBlocked && <span style={{ fontSize: '13px', background: '#fecaca', color: '#dc2626', padding: '4px 10px', borderRadius: '20px', fontWeight: '600' }}>BLOCKED</span>}
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedMemberInfo(null)} style={{ background: '#f3f4f6', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#6b7280', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseOver={(e)=>e.currentTarget.style.background='#e5e7eb'} onMouseOut={(e)=>e.currentTarget.style.background='#f3f4f6'}>✕</button>
             </div>
             
-            <div style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px', background: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
-              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Email</strong><span style={{fontSize:'16px', fontWeight:'500'}}>{selectedMemberInfo.email}</span></div>
-              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Phone</strong><span style={{fontSize:'16px', fontWeight:'500'}}>{selectedMemberInfo.phno || '-'}</span></div>
-              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Total Revenue</strong><span style={{fontSize:'16px', fontWeight:'600', color:'#0f7b6c'}}>₹
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #eaeaea', marginBottom: '30px' }}>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Email Address</strong><span style={{fontSize:'15px', fontWeight:'500', color: '#111827'}}>{selectedMemberInfo.email || '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Phone Number</strong><span style={{fontSize:'15px', fontWeight:'500', color: '#111827'}}>{selectedMemberInfo.phno || '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Password</strong><span style={{fontSize:'15px', fontWeight:'500', color: '#111827', fontFamily: 'monospace'}}>{selectedMemberInfo.password || '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Subscription</strong><span style={{fontSize:'15px', fontWeight:'600', color: '#059669'}}>{selectedMemberInfo.subscription || 'FREE'}</span></div>
+              <div style={{ gridColumn: '1 / -1' }}><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Full Address</strong><span style={{fontSize:'15px', fontWeight:'500', color: '#111827'}}>{[selectedMemberInfo.address, selectedMemberInfo.landmark, selectedMemberInfo.city, selectedMemberInfo.state, selectedMemberInfo.pincode].filter(Boolean).join(', ') || '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Created At</strong><span style={{fontSize:'14px', fontWeight:'500', color: '#4b5563'}}>{selectedMemberInfo.createTime ? new Date(selectedMemberInfo.createTime).toLocaleString() : '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Last Modified</strong><span style={{fontSize:'14px', fontWeight:'500', color: '#4b5563'}}>{selectedMemberInfo.modifyTime ? new Date(selectedMemberInfo.modifyTime).toLocaleString() : '-'}</span></div>
+              <div><strong style={{color:'#6b7280', fontSize:'12px', display:'block', textTransform:'uppercase', marginBottom: '4px'}}>Total Revenue</strong><span style={{fontSize:'18px', fontWeight:'700', color:'#0f7b6c'}}>₹
                 {borrowers
                   .filter(b => b.member?.id === selectedMemberInfo.id)
                   .reduce((sum, b) => sum + ((b.book?.price || 0) * (b.rentDays || 0)), 0)

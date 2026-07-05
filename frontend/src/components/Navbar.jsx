@@ -6,7 +6,7 @@ import axios from "axios";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, login } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
@@ -22,6 +22,12 @@ export default function Navbar() {
   const [activeSettingsTab, setActiveSettingsTab] = useState('account');
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phno: '', password: '', profileImage: null, profilePicString: '' });
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [toast, setToast] = useState({ msg: '', isError: false });
+
+  const showToast = (msg, isError = false) => {
+    setToast({ msg, isError });
+    setTimeout(() => setToast({ msg: '', isError: false }), 3000);
+  };
 
   const defaultAvatars = [
     'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
@@ -51,19 +57,22 @@ export default function Navbar() {
     }
 
     try {
-      await axios.put(`http://localhost:8081/api/users/${user.id}/profile`, formData, {
+      const res = await axios.put(`http://localhost:8081/api/users/${user.id}/profile`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert("Profile updated successfully! Please re-login if you changed your email or password.");
+      
+      const updatedUser = res.data;
+
       if (profileForm.password || profileForm.email !== user.email) {
+         alert("Profile updated successfully! Please re-login if you changed your email or password.");
          window.location.href = '/login';
       } else {
+         login(updatedUser); // Update local user state
          setShowSettingsModal(false);
-         // Ideally refresh user context here, but reloading is simpler for now
-         window.location.reload(); 
+         showToast("Profile updated successfully!");
       }
     } catch(err) {
-      alert("Failed to update profile: " + (err.response?.data || err.message));
+      showToast("Failed to update profile: " + (err.response?.data || err.message), true);
     }
   };
 
@@ -348,6 +357,19 @@ export default function Navbar() {
         </div>
       )}
 
+      {/* Toast Notification */}
+      {toast.msg && (
+        <div style={{
+          position: "fixed", bottom: "30px", right: "30px",
+          background: toast.isError ? "#ef4444" : "#3a5a40",
+          color: "#fff", padding: "16px 24px", borderRadius: "12px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.4)", zIndex: 999999,
+          display: "flex", alignItems: "center", gap: "12px",
+          fontSize: "15px", fontWeight: "500", animation: "slideUpFade 0.3s ease-out forwards"
+        }}>
+          {toast.msg}
+        </div>
+      )}
     </>
   );
 }
