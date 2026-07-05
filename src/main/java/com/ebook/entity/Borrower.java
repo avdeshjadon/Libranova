@@ -24,6 +24,8 @@ public class Borrower {
     private String note;
     private int rentDays;
     private String borrowDate;
+    private String returnDate;
+    private String status = "Active"; // Default status
 
     @CreationTimestamp
     private LocalDateTime createTime;
@@ -61,4 +63,10 @@ public class Borrower {
 
     public String getPaymentMode() { return paymentMode; }
     public void setPaymentMode(String paymentMode) { this.paymentMode = paymentMode; }
+
+    public String getReturnDate() { return returnDate; }
+    public void setReturnDate(String returnDate) { this.returnDate = returnDate; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

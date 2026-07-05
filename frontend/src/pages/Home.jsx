@@ -9,9 +9,10 @@ import {
   X,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function Home() {
+  const { categoryName } = useParams();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
@@ -20,7 +21,10 @@ export default function Home() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [rentDays, setRentDays] = useState(7);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const booksPerPage = 8;
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedInfoBook, setSelectedInfoBook] = useState(null);
+  const [sortOption, setSortOption] = useState("name-asc");
+  const booksPerPage = 10;
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -111,24 +115,26 @@ export default function Home() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  const filteredBooks = books.filter(
-    (b) =>
-      b.bookName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.bookCategory.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-  const currentBooks = filteredBooks.slice(
-    (currentPage - 1) * booksPerPage,
-    currentPage * booksPerPage,
-  );
+  const filteredBooks = books.filter((b) => {
+    const matchesSearch = b.bookName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          b.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          b.bookCategory.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (categoryName) {
+      return matchesSearch && b.bookCategory === decodeURIComponent(categoryName);
+    }
+    return matchesSearch;
+  }).sort((a, b) => {
+    if (sortOption === "name-asc") return a.bookName.localeCompare(b.bookName);
+    if (sortOption === "name-desc") return b.bookName.localeCompare(a.bookName);
+    if (sortOption === "price-asc") return parseFloat(a.price) - parseFloat(b.price);
+    if (sortOption === "price-desc") return parseFloat(b.price) - parseFloat(a.price);
+    return 0;
+  });
 
   // Handle Search Input Change
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to page 1 on search
   };
 
   // Get a specific image based on upload or fallback to unsplash
@@ -239,7 +245,7 @@ export default function Home() {
               border: "1px solid rgba(218, 215, 205, 0.3)",
             }}
           >
-            🌿 Curated Knowledge Collection
+            {categoryName ? decodeURIComponent(categoryName) : "Curated Knowledge Collection"}
           </div>
           <h1
             style={{
@@ -315,12 +321,13 @@ export default function Home() {
         className="container"
         style={{ padding: "60px 40px", maxWidth: "1400px", margin: "0 auto" }}
       >
+
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "40px",
+            justifyContent: "space-between",
+            marginBottom: "30px",
           }}
         >
           <div>
@@ -332,11 +339,59 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {searchQuery ? "Search Results" : "Trending Books"}
+              {searchQuery ? "Search Results" : (categoryName ? decodeURIComponent(categoryName) : "Trending Books")}
             </h2>
             <p style={{ color: "#588157" }}>
               {filteredBooks.length} books found
             </p>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "24px", marginRight: "20px" }}>
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", top: "50%", left: "12px", transform: "translateY(-50%)", color: "#6c757d" }}>
+                <Search size={16} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search table..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                style={{
+                  padding: "8px 16px 8px 36px",
+                  borderRadius: "8px",
+                  border: "1px solid #ced4da",
+                  outline: "none",
+                  fontSize: "14px",
+                  width: "250px",
+                  transition: "border-color 0.2s"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#a3b18a"}
+                onBlur={(e) => e.target.style.borderColor = "#ced4da"}
+              />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "14px", fontWeight: "600", color: "#344e41" }}>Sort by:</span>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #ced4da",
+                  outline: "none",
+                  fontSize: "14px",
+                  color: "#495057",
+                  cursor: "pointer",
+                  background: "#fff"
+                }}
+              >
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="price-asc">Price (Low to High)</option>
+                <option value="price-desc">Price (High to Low)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -380,297 +435,74 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "30px",
-                marginBottom: "50px",
-              }}
-            >
-              {currentBooks.map((b, index) => (
-                <div
-                  key={b.bookId}
-                  style={{
-                    background: "rgba(255, 255, 255, 0.7)",
-                    backdropFilter: "blur(10px)",
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                    border: "1px solid rgba(255, 255, 255, 0.5)",
-                    boxShadow: "0 4px 15px rgba(52, 78, 65, 0.08)",
-                    transition: "all 0.3s ease",
-                    display: "flex",
-                    flexDirection: "column",
-                    cursor: "pointer",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = "translateY(-6px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 12px 24px rgba(52, 78, 65, 0.15)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 15px rgba(52, 78, 65, 0.08)";
-                  }}
-                >
-                  {/* HD Image Cover */}
-                  <div
-                    style={{
-                      height: "220px",
-                      width: "100%",
-                      position: "relative",
-                    }}
-                  >
-                    <img
-                      src={getCoverImage(b, index)}
-                      alt={b.bookName}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background:
-                          "linear-gradient(to bottom, transparent, rgba(52, 78, 65, 0.8))",
-                      }}
-                    ></div>
-
-                    {/* Overlay Category Tag */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "16px",
-                        left: "16px",
-                        background: "rgba(255, 255, 255, 0.2)",
-                        backdropFilter: "blur(8px)",
-                        color: "#fff",
-                        padding: "6px 12px",
-                        borderRadius: "20px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        border: "1px solid rgba(255, 255, 255, 0.3)",
-                      }}
-                    >
-                      {b.bookCategory}
-                    </div>
-
-                    {/* Title and Author over image */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: "16px",
-                        left: "16px",
-                        right: "16px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          fontSize: "18px",
-                          fontWeight: "700",
-                          color: "#fff",
-                          marginBottom: "4px",
-                          lineHeight: "1.3",
-                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                        }}
-                      >
-                        {b.bookName}
-                      </h3>
-                      <p
-                        style={{
-                          color: "#e0e1dd",
-                          fontSize: "13px",
-                          textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                        }}
-                      >
-                        By {b.author}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Book Details Bottom Half */}
-                  <div
-                    style={{
-                      padding: "20px",
-                      display: "flex",
-                      flexDirection: "column",
-                      flexGrow: 1,
-                      background: "#fff",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        fontSize: "13px",
-                        marginBottom: "20px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background:
-                            b.status === "Available" ? "#588157" : "#ef4444",
-                        }}
-                      ></div>
-                      <span style={{ color: "#588157", fontWeight: "500" }}>
-                        {b.status || "Available"}
-                      </span>
-                    </div>
-
-                    {/* Beautiful Add to Cart Row */}
-                    <div
-                      style={{
-                        marginTop: "auto",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        borderTop: "1px solid #e9ecef",
-                        paddingTop: "16px",
-                      }}
-                    >
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            color: "#588157",
-                            fontWeight: "600",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          Price / Day
+            <div className="smooth-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "600px", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 15px rgba(52, 78, 65, 0.08)", border: "1px solid #eaeaea", marginBottom: "50px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                <thead>
+                  <tr style={{ background: "#f8f9fa", borderBottom: "2px solid #eaeaea", color: "#344e41", position: "sticky", top: 0, zIndex: 10 }}>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>S.No.</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>Book Name</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>Author</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>Category</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>Price/Day</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px" }}>Status</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap" }}>Qty Left</th>
+                    <th style={{ padding: "12px 16px", fontWeight: "600", fontSize: "14px", textAlign: "center" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBooks.map((b, index) => (
+                    <tr className="table-row-animate" key={b.bookId} style={{ borderBottom: "1px solid #eaeaea", transition: "background 0.2s", animationDelay: `${index * 0.04}s` }} onMouseOver={(e) => e.currentTarget.style.background = "#f4f7f6"} onMouseOut={(e) => e.currentTarget.style.background = "transparent"}>
+                      <td style={{ padding: "12px 16px", color: "#666", fontSize: "14px", fontWeight: "500" }}>{index + 1}</td>
+                      <td style={{ padding: "12px 16px", fontWeight: "600", color: "#333", fontSize: "15px" }}>{b.bookName}</td>
+                      <td style={{ padding: "12px 16px", color: "#555", fontSize: "14px" }}>{b.author}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ padding: "4px 10px", background: "#e9ecef", borderRadius: "20px", fontSize: "12px", color: "#495057", fontWeight: "500", whiteSpace: "nowrap" }}>{b.bookCategory}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontWeight: "700", color: "#344e41", fontSize: "15px" }}>₹{parseFloat(b.price).toFixed(2)}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ 
+                          color: (b.status === "Available" || b.status === "Active") ? "#588157" : "#ef4444", 
+                          fontWeight: "500", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px"
+                        }}>
+                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: (b.status === "Available" || b.status === "Active") ? "#588157" : "#ef4444" }}></div>
+                          {(b.status === "Active" || b.status === "Available") ? "Available" : "Unavailable"}
                         </span>
-                        <span
-                          style={{
-                            fontSize: "22px",
-                            fontWeight: "800",
-                            color: "#344e41",
-                          }}
-                        >
-                          ₹{parseFloat(b.price).toFixed(2)}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openRentModal(b);
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          background: "#3a5a40",
-                          color: "#fff",
-                          border: "none",
-                          padding: "10px 18px",
-                          borderRadius: "10px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          boxShadow: "0 4px 10px rgba(58, 90, 64, 0.3)",
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.background = "#588157";
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = "#3a5a40";
-                          e.currentTarget.style.transform = "none";
-                        }}
-                      >
-                        <Calendar size={18} /> Rent
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#495057", fontSize: "14px", fontWeight: "500" }}>
+                        {b.amountInStock} / {b.totalCopies}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                          <button
+                            onClick={() => { setSelectedInfoBook(b); setIsInfoModalOpen(true); }}
+                            style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #344e41", background: "transparent", color: "#344e41", fontWeight: "600", cursor: "pointer", fontSize: "13px", transition: "all 0.2s", whiteSpace: "nowrap" }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = "#f4f7f6" }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = "transparent" }}
+                          >
+                            More Info
+                          </button>
+                          <button
+                            onClick={() => openRentModal(b)}
+                            style={{ display: "flex", alignItems: "center", gap: "6px", background: "#3a5a40", color: "#fff", border: "none", padding: "8px 12px", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "13px", transition: "all 0.2s", whiteSpace: "nowrap" }}
+                            onMouseOver={(e) => e.currentTarget.style.background = "#588157"}
+                            onMouseOut={(e) => e.currentTarget.style.background = "#3a5a40"}
+                          >
+                            <Calendar size={14} /> Rent
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: "16px",
-                }}
-              >
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    border: "none",
-                    background: currentPage === 1 ? "#e9ecef" : "#a3b18a",
-                    color: currentPage === 1 ? "#ced4da" : "#344e41",
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <ChevronLeft size={20} />
-                </button>
-
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#3a5a40",
-                  }}
-                >
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    border: "none",
-                    background:
-                      currentPage === totalPages ? "#e9ecef" : "#a3b18a",
-                    color: currentPage === totalPages ? "#ced4da" : "#344e41",
-                    cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            )}
-          </>
         )}
       </div>
 
       {/* Rent Modal */}
       {isModalOpen && selectedBook && (
         <div
+          className="modal-backdrop-animate"
           style={{
             position: "fixed",
             top: 0,
@@ -686,6 +518,7 @@ export default function Home() {
           }}
         >
           <div
+            className="modal-content-animate"
             style={{
               background: "#fff",
               borderRadius: "20px",
@@ -809,6 +642,140 @@ export default function Home() {
             >
               Confirm Rental
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal */}
+      {isInfoModalOpen && selectedInfoBook && (
+        <div
+          className="modal-backdrop-animate"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(5px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+            padding: "20px",
+          }}
+          onClick={() => setIsInfoModalOpen(false)}
+        >
+          <div
+            className="modal-content-animate"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "800px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              position: "relative",
+              display: "flex",
+              gap: "32px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsInfoModalOpen(false)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "rgba(0,0,0,0.05)",
+                border: "none",
+                cursor: "pointer",
+                color: "#64748b",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.1)"}
+              onMouseOut={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.05)"}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Thumbnail Left */}
+            <div style={{ flex: "0 0 300px", borderRadius: "12px", overflow: "hidden", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
+              <img 
+                src={getCoverImage(selectedInfoBook, 0)} 
+                alt={selectedInfoBook.bookName} 
+                style={{ width: "100%", height: "450px", objectFit: "cover" }} 
+              />
+            </div>
+
+            {/* Details Right */}
+            <div style={{ flex: "1", display: "flex", flexDirection: "column" }}>
+              <span style={{ 
+                display: "inline-block", padding: "4px 12px", background: "#e9ecef", color: "#495057", 
+                borderRadius: "20px", fontSize: "13px", fontWeight: "600", marginBottom: "12px", width: "fit-content"
+              }}>
+                {selectedInfoBook.bookCategory}
+              </span>
+
+              <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#344e41", marginBottom: "8px", lineHeight: "1.2" }}>
+                {selectedInfoBook.bookName}
+              </h2>
+              
+              <div style={{ fontSize: "16px", color: "#666", marginBottom: "24px" }}>
+                By <strong style={{ color: "#333" }}>{selectedInfoBook.author}</strong>
+              </div>
+
+              <div style={{ background: "#f8f9fa", padding: "16px", borderRadius: "12px", marginBottom: "24px", border: "1px solid #eaeaea" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: "600", color: "#344e41", marginBottom: "8px" }}>About this Book</h4>
+                <p style={{ fontSize: "14px", color: "#555", lineHeight: "1.6", margin: 0 }}>
+                  This is a wonderful book in the <strong>{selectedInfoBook.bookCategory}</strong> genre written by <strong>{selectedInfoBook.author}</strong>. 
+                  It offers great insights and knowledge, captivating readers from the very first page. 
+                  Explore the fascinating concepts and immerse yourself in this incredible masterpiece.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", borderTop: "1px solid #eaeaea", paddingTop: "24px" }}>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#588157", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px" }}>Price / Day</div>
+                  <div style={{ fontSize: "28px", fontWeight: "800", color: "#344e41" }}>₹{parseFloat(selectedInfoBook.price).toFixed(2)}</div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ 
+                    color: (selectedInfoBook.status === "Available" || selectedInfoBook.status === "Active") ? "#588157" : "#ef4444", 
+                    fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", fontSize: "15px",
+                    background: (selectedInfoBook.status === "Available" || selectedInfoBook.status === "Active") ? "rgba(88,129,87,0.1)" : "rgba(239,68,68,0.1)",
+                    padding: "8px 16px", borderRadius: "20px"
+                  }}>
+                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: (selectedInfoBook.status === "Available" || selectedInfoBook.status === "Active") ? "#588157" : "#ef4444" }}></div>
+                    {(selectedInfoBook.status === "Active" || selectedInfoBook.status === "Available") ? "Available" : "Unavailable"}
+                  </span>
+                  
+                  <button
+                    onClick={() => {
+                      setIsInfoModalOpen(false);
+                      openRentModal(selectedInfoBook);
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "8px", background: "#3a5a40", color: "#fff",
+                      border: "none", padding: "12px 24px", borderRadius: "10px", fontWeight: "600", cursor: "pointer",
+                      fontSize: "15px", transition: "all 0.2s", boxShadow: "0 4px 10px rgba(58, 90, 64, 0.2)"
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = "#588157"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = "#3a5a40"; e.currentTarget.style.transform = "none"; }}
+                  >
+                    <Calendar size={18} /> Rent Now
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       )}

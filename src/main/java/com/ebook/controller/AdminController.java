@@ -94,6 +94,9 @@ public class AdminController {
             @RequestParam("author") String author,
             @RequestParam("bookCategory") String bookCategory,
             @RequestParam("price") String price,
+            @RequestParam("totalCopies") int totalCopies,
+            @RequestParam("amountInStock") int amountInStock,
+            @RequestParam("status") String status,
             @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
         
         String fileName = "default.jpg";
@@ -113,10 +116,51 @@ public class AdminController {
         book.setAuthor(author);
         book.setBookCategory(bookCategory);
         book.setPrice(price);
-        book.setStatus("Active");
+        book.setTotalCopies(totalCopies);
+        book.setAmountInStock(amountInStock);
+        book.setStatus(status);
         book.setPhotoName(fileName);
         
         return ResponseEntity.ok(bookRepository.save(book));
+    }
+
+    @PutMapping("/books/{id}/with-cover")
+    public ResponseEntity<?> updateBookWithCover(
+            @PathVariable int id,
+            @RequestParam("bookName") String bookName,
+            @RequestParam("author") String author,
+            @RequestParam("bookCategory") String bookCategory,
+            @RequestParam("price") String price,
+            @RequestParam("totalCopies") int totalCopies,
+            @RequestParam("amountInStock") int amountInStock,
+            @RequestParam("status") String status,
+            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
+        return bookRepository.findById(id).map(book -> {
+            if (coverImage != null && !coverImage.isEmpty()) {
+                if (book.getPhotoName() != null && !book.getPhotoName().equals("default.jpg") && !book.getPhotoName().isEmpty()) {
+                    try {
+                        Files.deleteIfExists(Paths.get("frontend/public/books/" + book.getPhotoName()));
+                    } catch (Exception e) {}
+                }
+                
+                String fileName = System.currentTimeMillis() + "_" + coverImage.getOriginalFilename().replaceAll("\\s+", "_");
+                try {
+                    Path path = Paths.get("frontend/public/books/" + fileName);
+                    Files.createDirectories(path.getParent());
+                    Files.write(path, coverImage.getBytes());
+                    book.setPhotoName(fileName);
+                } catch (Exception e) {}
+            }
+            
+            book.setBookName(bookName);
+            book.setAuthor(author);
+            book.setPrice(price);
+            book.setBookCategory(bookCategory);
+            book.setTotalCopies(totalCopies);
+            book.setAmountInStock(amountInStock);
+            book.setStatus(status);
+            return ResponseEntity.ok(bookRepository.save(book));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/books/{id}")

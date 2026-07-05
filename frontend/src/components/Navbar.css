@@ -55,51 +55,81 @@
   color: #3a5a40;
 }
 
-/* Dropdown Container */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-/* Dropdown Content (Hidden by Default) */
-.dropdown-content {
-  visibility: hidden;
-  opacity: 0;
+.nav-link::after {
+  content: '';
   position: absolute;
-  top: 150%;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%) translateY(-10px);
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  min-width: 200px;
-  box-shadow: 0px 8px 24px rgba(52, 78, 65, 0.15);
-  border-radius: 12px;
-  border: 1px solid rgba(88, 129, 87, 0.2);
-  padding: 10px;
-  z-index: 1;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateX(-50%);
+  width: 0;
+  height: 2.5px;
+  background-color: #3a5a40;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 4px;
 }
 
-/* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 70%;
+}
+
+.nav-link.active {
+  color: #3a5a40;
+}
+
+/* Mega Menu Slide Down */
+.mega-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0.6s;
+  z-index: 99; /* We can keep it positive now since it won't overlap */
+}
+
+.mega-menu.show {
   visibility: visible;
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transition: visibility 0s;
 }
 
-/* Links inside the dropdown */
-.dropdown-content a {
+.mega-menu-content {
+  height: 100%;
+  width: 100%;
+  background: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0);
+  transform: translateY(-100%);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease, border-bottom 0.6s ease;
+}
+
+.mega-menu.show .mega-menu-content {
+  transform: translateY(0);
+  border-bottom: 1px solid rgba(88, 129, 87, 0.2);
+  box-shadow: 0px 8px 24px rgba(52, 78, 65, 0.1);
+}
+
+.mega-menu .container {
+  height: 100%;
+}
+
+.mega-menu a {
   color: #588157;
-  padding: 10px 16px;
   text-decoration: none;
-  display: block;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 8px 16px;
   border-radius: 8px;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.dropdown-content a:hover {
-  background-color: rgba(88, 129, 87, 0.1);
+.mega-menu a:hover {
+  background: rgba(88, 129, 87, 0.1);
   color: #3a5a40;
 }
 

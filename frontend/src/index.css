@@ -166,3 +166,36 @@ select.form-control {
   padding: 60px 20px;
   color: var(--text-muted);
 }
+
+/* Smooth UI Animations */
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInFast {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-backdrop-animate {
+  animation: fadeInFast 0.2s ease-out forwards;
+}
+
+.modal-content-animate {
+  animation: fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.table-row-animate {
+  opacity: 0;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}

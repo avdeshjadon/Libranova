@@ -64,4 +64,58 @@ public class BorrowerController {
         
         return ResponseEntity.ok(borrowerRepository.save(borrower));
     }
+
+    @PutMapping("/{id}/return")
+    public ResponseEntity<?> returnBook(@PathVariable int id) {
+        Optional<Borrower> borrowOpt = borrowerRepository.findById(id);
+        if (borrowOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Borrower borrower = borrowOpt.get();
+        if ("Returned".equals(borrower.getStatus())) {
+            return ResponseEntity.badRequest().body("Book already returned!");
+        }
+
+        borrower.setStatus("Returned");
+        borrower.setReturnDate(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        borrowerRepository.save(borrower);
+
+        // Increment stock
+        BookDtls book = borrower.getBook();
+        if (book != null) {
+            book.setAmountInStock(book.getAmountInStock() + 1);
+            if (book.getAmountInStock() > 0 && "Unavailable".equals(book.getStatus())) {
+                book.setStatus("Available");
+            }
+            bookRepository.save(book);
+        }
+
+        return ResponseEntity.ok("Book returned successfully");
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBorrowRecord(@PathVariable int id) {
+        Optional<Borrower> borrowOpt = borrowerRepository.findById(id);
+        if (borrowOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Borrower borrower = borrowOpt.get();
+        
+        // If it's active and deleted, increment stock back?
+        // Let's assume yes, if we delete an active record, we restore the stock
+        if ("Active".equals(borrower.getStatus())) {
+            BookDtls book = borrower.getBook();
+            if (book != null) {
+                book.setAmountInStock(book.getAmountInStock() + 1);
+                if (book.getAmountInStock() > 0 && "Unavailable".equals(book.getStatus())) {
+                    book.setStatus("Available");
+                }
+                bookRepository.save(book);
+            }
+        }
+        
+        borrowerRepository.delete(borrower);
+        return ResponseEntity.ok("Borrow record deleted");
+    }
 }

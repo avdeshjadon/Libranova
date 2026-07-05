@@ -28,6 +28,7 @@ public class User {
 
     private String role = "USER"; // "ADMIN" or "USER"
     private String subscription = "FREE"; // "FREE", "BASIC", "PREMIUM"
+    private String profilePic = "default-avatar.png";
     private boolean isBlocked = false;
 
     @CreationTimestamp
@@ -83,4 +84,7 @@ public class User {
     
     public String getPincode() { return pincode; }
     public void setPincode(String pincode) { this.pincode = pincode; }
+    
+    public String getProfilePic() { return profilePic; }
+    public void setProfilePic(String profilePic) { this.profilePic = profilePic; }
 }

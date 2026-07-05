@@ -27,10 +27,10 @@ export default function Footer() {
         <div>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#e0e1dd' }}>Categories</h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <li style={{ color: '#dad7cd' }}>Programming & Tech</li>
-            <li style={{ color: '#dad7cd' }}>Business & Economics</li>
-            <li style={{ color: '#dad7cd' }}>Fiction & Literature</li>
-            <li style={{ color: '#dad7cd' }}>Sci-Fi & Fantasy</li>
+            <li><Link to="/category/Programming%20%26%20Tech" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Programming & Tech</Link></li>
+            <li><Link to="/category/Business%20%26%20Economics" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Business & Economics</Link></li>
+            <li><Link to="/category/Fiction%20%26%20Literature" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Fiction & Literature</Link></li>
+            <li><Link to="/category/Sci-Fi%20%26%20Fantasy" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>Sci-Fi & Fantasy</Link></li>
           </ul>
         </div>
 
@@ -38,8 +38,8 @@ export default function Footer() {
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#e0e1dd' }}>Contact Us</h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <li style={{ color: '#dad7cd' }}>📍 123 Library Street, Green City</li>
-            <li style={{ color: '#dad7cd' }}>📞 +91 98765 43210</li>
-            <li style={{ color: '#dad7cd' }}>✉️ support@libranova.com</li>
+            <li><a href="tel:+919876543210" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>📞 +91 98765 43210</a></li>
+            <li><a href="mailto:support@libranova.com" style={{ color: '#dad7cd', textDecoration: 'none', transition: 'color 0.2s' }}>✉️ support@libranova.com</a></li>
           </ul>
         </div>
       </div>

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { BookOpen, Users, UserCheck, Plus, Menu } from 'lucide-react';
+import { BookOpen, Users, UserCheck, Plus, Menu, Trash2, Info, Edit2, RotateCcw } from 'lucide-react';
 import '../../App.css'; 
 
 export default function AdminDashboard() {
@@ -33,6 +33,24 @@ export default function AdminDashboard() {
   // Edit Book Modal
   const [editingBook, setEditingBook] = useState(null);
 
+  // Member Info Modal
+  const [selectedMemberInfo, setSelectedMemberInfo] = useState(null);
+
+  // Custom Confirmation Modal
+  const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null });
+
+  const executeWithConfirm = (title, message, action) => {
+    setConfirmModal({
+      show: true,
+      title,
+      message,
+      onConfirm: async () => {
+        await action();
+        setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
+      }
+    });
+  };
+
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') {
       navigate('/');
@@ -61,10 +79,24 @@ export default function AdminDashboard() {
 
   const handleAddBook = async (e) => {
     e.preventDefault();
+    const formData = new FormData();
+    formData.append('bookName', newBook.bookName);
+    formData.append('author', newBook.author);
+    formData.append('bookCategory', newBook.bookCategory);
+    formData.append('price', newBook.price);
+    formData.append('totalCopies', newBook.totalCopies);
+    formData.append('amountInStock', newBook.amountInStock);
+    formData.append('status', newBook.status);
+    if (newBook.coverImage) {
+      formData.append('coverImage', newBook.coverImage);
+    }
+
     try {
-      await axios.post('http://localhost:8081/api/admin/books', newBook);
+      await axios.post('http://localhost:8081/api/admin/books/with-cover', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setShowAddBook(false);
-      setNewBook({ bookName: '', author: '', bookCategory: 'Programming', price: '', totalCopies: 1, amountInStock: 1, status: 'Available', photoName: '' });
+      setNewBook({ bookName: '', author: '', bookCategory: 'Programming', price: '', totalCopies: 1, amountInStock: 1, status: 'Available', coverImage: null });
       fetchData();
     } catch(err) {
       alert("Failed to add book: " + (err.response?.data || err.message));
@@ -111,13 +143,74 @@ export default function AdminDashboard() {
 
   const handleUpdateFullBook = async (e) => {
     e.preventDefault();
+    const formData = new FormData();
+    formData.append('bookName', editingBook.bookName);
+    formData.append('author', editingBook.author);
+    formData.append('bookCategory', editingBook.bookCategory);
+    formData.append('price', editingBook.price);
+    formData.append('totalCopies', editingBook.totalCopies);
+    formData.append('amountInStock', editingBook.amountInStock);
+    formData.append('status', editingBook.status);
+    if (editingBook.coverImage) {
+      formData.append('coverImage', editingBook.coverImage);
+    }
+
     try {
-      await axios.put(`http://localhost:8081/api/books/${editingBook.bookId}`, editingBook);
+      await axios.put(`http://localhost:8081/api/admin/books/${editingBook.bookId}/with-cover`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setEditingBook(null);
       fetchData();
     } catch (err) {
       alert("Failed to update book: " + (err.response?.data || err.message));
     }
+  };
+
+  const handleDeleteBook = (id) => {
+    executeWithConfirm('Delete Book', 'Are you sure you want to permanently delete this book?', async () => {
+      try {
+        await axios.delete(`http://localhost:8081/api/books/${id}`);
+        fetchData();
+      } catch(err) { alert('Failed to delete book'); }
+    });
+  };
+
+  const handleDeleteMember = (id) => {
+    executeWithConfirm('Delete Member', 'Are you sure you want to permanently delete this member?', async () => {
+      try {
+        await axios.delete(`http://localhost:8081/api/users/${id}`);
+        fetchData();
+      } catch(err) { alert('Failed to delete member'); }
+    });
+  };
+
+  const handleDeleteBorrowRecord = (id) => {
+    executeWithConfirm('Delete Record', 'Are you sure you want to permanently delete this borrow record?', async () => {
+      try {
+        await axios.delete(`http://localhost:8081/api/borrow/${id}`);
+        fetchData();
+      } catch(err) { alert('Failed to delete record'); }
+    });
+  };
+
+  const handleReturnBook = (borrowRecord) => {
+    const lateInfo = getLateInfo(borrowRecord.borrowDate, borrowRecord.rentDays);
+    const lateFee = lateInfo.isLate ? lateInfo.daysLate * (borrowRecord.book?.price || 0) : 0;
+    
+    let title = 'Return / Repay Book';
+    let message = 'Are you sure you want to mark this book as returned and process repayment?';
+    
+    if (lateInfo.isLate) {
+      title = 'Process Late Return (Payment Required)';
+      message = `This book is ${lateInfo.daysLate} days late. An additional late fee of ₹${lateFee.toFixed(2)} must be collected. Please collect the total amount before proceeding.`;
+    }
+
+    executeWithConfirm(title, message, async () => {
+      try {
+        await axios.put(`http://localhost:8081/api/borrow/${borrowRecord.id}/return`);
+        fetchData();
+      } catch(err) { alert('Failed to return book: ' + (err.response?.data || err.message)); }
+    });
   };
 
   const borrowCounts = books.map(b => ({
@@ -150,10 +243,41 @@ export default function AdminDashboard() {
     return cats[category] || '#32302c';
   };
 
+  // Late fee helper
+  const getLateInfo = (borrowDateStr, rentDays, returnDateStr = null) => {
+    if (!borrowDateStr || !rentDays) return { isLate: false, daysLate: 0 };
+    
+    // Parse borrow date (YYYY-MM-DD format usually)
+    const borrowDate = new Date(borrowDateStr);
+    const dueDate = new Date(borrowDate);
+    dueDate.setDate(dueDate.getDate() + rentDays);
+    dueDate.setHours(0,0,0,0);
+    
+    let compareDate = new Date(); // Today
+    if (returnDateStr) {
+      // returnDate is dd/MM/yyyy
+      const parts = returnDateStr.split('/');
+      if (parts.length === 3) {
+        compareDate = new Date(parts[2], parts[1] - 1, parts[0]);
+      }
+    }
+    compareDate.setHours(0,0,0,0);
+    
+    if (compareDate > dueDate) {
+      const diffTime = Math.abs(compareDate - dueDate);
+      const daysLate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return { isLate: true, daysLate };
+    }
+    return { isLate: false, daysLate: 0 };
+  };
+
   const filteredBorrowers = borrowers.filter(b => 
     b.member?.name?.toLowerCase().includes(borrowerSearch.toLowerCase()) || 
     b.book?.bookName?.toLowerCase().includes(borrowerSearch.toLowerCase())
   );
+
+  const activeBorrowers = filteredBorrowers.filter(b => b.status !== 'Returned');
+  const returnedBorrowers = filteredBorrowers.filter(b => b.status === 'Returned');
 
   const filteredBooks = books.filter(b => 
     b.bookName?.toLowerCase().includes(bookSearch.toLowerCase()) ||
@@ -172,13 +296,12 @@ export default function AdminDashboard() {
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#fff' }}>
       <div className="notion-banner" style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to right, rgba(52, 78, 65, 0.95) 0%, rgba(58, 90, 64, 0.6) 50%, transparent 100%)' }}></div>
         <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.2)', display: 'inline-block' }}>
-            <h1 style={{ color: '#fff', fontSize: '42px', fontWeight: '800', margin: 0, letterSpacing: '-1px' }}>
-              Libranova <span style={{ color: '#a3b18a' }}>Workspace</span>
+          <div style={{ background: 'rgba(255, 255, 255, 0.65)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 32px 0 rgba(163, 177, 138, 0.15)', display: 'inline-block' }}>
+            <h1 style={{ color: '#2b3a2f', fontSize: '42px', fontWeight: '800', margin: 0, letterSpacing: '-1px' }}>
+              Libranova <span style={{ color: '#6a8264' }}>Workspace</span>
             </h1>
-            <p style={{ color: '#e0e1dd', fontSize: '16px', margin: '10px 0 0 0', fontWeight: '500' }}>
+            <p style={{ color: '#526b5d', fontSize: '16px', margin: '10px 0 0 0', fontWeight: '500' }}>
               Premium Book Rental Management System
             </p>
           </div>
@@ -324,7 +447,21 @@ export default function AdminDashboard() {
                     <option value="Available">Available</option>
                     <option value="Unavailable">Unavailable</option>
                   </select>
-                  <input type="text" className="form-control" placeholder="Cover URL (Optional)" value={newBook.photoName} onChange={e=>setNewBook({...newBook, photoName: e.target.value})} style={{ flex: 1 }}/>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <div 
+                    style={{ border: '2px dashed #ccc', padding: '24px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', background: '#fafafa', color: '#666' }}
+                    onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) setNewBook({...newBook, coverImage: file}); }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onClick={() => document.getElementById('addBookCoverInput').click()}
+                  >
+                    {newBook.coverImage ? (
+                      <span style={{ color: '#166534', fontWeight: '600' }}>Selected: {newBook.coverImage.name}</span>
+                    ) : (
+                      <span>Drag and drop cover image here, or click to browse</span>
+                    )}
+                    <input type="file" id="addBookCoverInput" hidden accept="image/*" onChange={(e) => { if(e.target.files[0]) setNewBook({...newBook, coverImage: e.target.files[0]}); }} />
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddBook(false)}>Cancel</button>
@@ -368,6 +505,21 @@ export default function AdminDashboard() {
                     <option value="Available">Available</option>
                     <option value="Unavailable">Unavailable</option>
                   </select>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <div 
+                    style={{ border: '2px dashed #ccc', padding: '24px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', background: '#fafafa', color: '#666' }}
+                    onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) setEditingBook({...editingBook, coverImage: file}); }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onClick={() => document.getElementById('editBookCoverInput').click()}
+                  >
+                    {editingBook.coverImage ? (
+                      <span style={{ color: '#166534', fontWeight: '600' }}>Selected: {editingBook.coverImage.name}</span>
+                    ) : (
+                      <span>Drag and drop new cover image here, or click to browse</span>
+                    )}
+                    <input type="file" id="editBookCoverInput" hidden accept="image/*" onChange={(e) => { if(e.target.files[0]) setEditingBook({...editingBook, coverImage: e.target.files[0]}); }} />
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setEditingBook(null)}>Cancel</button>
@@ -417,53 +569,166 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px', background: '#fff', border: '1px solid #e0e1dd', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-              <table className="notion-exact-table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
+            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
+              <table className="notion-exact-table" style={{ minWidth: '800px' }}>
                 <thead>
-                  <tr style={{ background: '#f8f9fa' }}>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd', minWidth: '150px' }}>Member Name</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd', minWidth: '150px' }}>Book Title</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Category</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Author</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Price/Day</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Borrow Date</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Duration</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Payment</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Total Amount</th>
-                    <th style={{ padding: '16px', textAlign: 'left', color: '#588157', fontWeight: '600', borderBottom: '2px solid #e0e1dd' }}>Note</th>
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Book Title</th>
+                    <th>Category</th>
+                    <th>Author</th>
+                    <th>Price/Day</th>
+                    <th>Borrow Date</th>
+                    <th>Duration</th>
+                    <th>Payment</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBorrowers.map((b, index) => (
-                    <tr key={b.id} style={{ borderBottom: '1px solid #e0e1dd', background: index % 2 === 0 ? '#fff' : '#fafafa' }}>
-                      <td style={{ padding: '16px', fontWeight: '600', color: '#333' }}>{b.member?.name}</td>
-                      <td style={{ padding: '16px', color: '#3a5a40', fontWeight: '600' }}>{b.book?.bookName}</td>
-                      <td style={{ padding: '16px', color: '#666' }}>{b.book?.bookCategory}</td>
-                      <td style={{ padding: '16px', color: '#666' }}>{b.book?.author}</td>
-                      <td style={{ padding: '16px', color: '#333', fontWeight: '500' }}>₹{b.book?.price ? Number(b.book?.price).toFixed(2) : '0.00'}</td>
-                      <td style={{ padding: '16px', color: '#666' }}>{b.borrowDate || '-'}</td>
-                      <td style={{ padding: '16px' }}>
+                  {activeBorrowers.map((b) => {
+                    const lateInfo = getLateInfo(b.borrowDate, b.rentDays);
+                    const originalTotal = (b.book?.price || 0) * (b.rentDays || 0);
+                    const lateFee = lateInfo.isLate ? lateInfo.daysLate * (b.book?.price || 0) : 0;
+                    
+                    return (
+                    <tr key={b.id}>
+                      <td style={{ fontWeight: '600' }}>{b.member?.name}</td>
+                      <td 
+                        style={{ fontWeight:'600', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        title={b.book?.bookName}
+                      >
+                        {b.book?.bookName}
+                      </td>
+                      <td>
+                        <span className="notion-tag-pill" style={{ background: getTagColor(b.book?.bookCategory), color: getTagTextColor(b.book?.bookCategory) }}>
+                          {b.book?.bookCategory}
+                        </span>
+                      </td>
+                      <td 
+                        style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        title={b.book?.author}
+                      >
+                        {b.book?.author}
+                      </td>
+                      <td>₹{b.book?.price ? Number(b.book?.price).toFixed(2) : '0.00'}</td>
+                      <td>{b.borrowDate || '-'}</td>
+                      <td>
                         <span style={{ background: '#eaf2f6', color: '#1d4f47', padding: '4px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '500' }}>
                           {b.rentDays} days
                         </span>
                       </td>
-                      <td style={{ padding: '16px', color: '#666', fontSize: '13px' }}>
+                      <td>
                         <span style={{ background: b.paymentMode === 'Online' ? '#e0e7ff' : '#dcfce7', color: b.paymentMode === 'Online' ? '#3730a3' : '#166534', padding: '4px 8px', borderRadius: '4px', fontWeight: '500' }}>
                           {b.paymentMode || 'Cash'}
                         </span>
                       </td>
-                      <td style={{ padding: '16px', color: '#1a1a1a', fontWeight: '700' }}>
-                        ₹{((b.book?.price || 0) * (b.rentDays || 0)).toFixed(2)}
+                      <td style={{ fontWeight: '700' }}>
+                        ₹{originalTotal.toFixed(2)}
+                        {lateInfo.isLate && <span style={{ color: '#e03e3e', marginLeft: '4px', fontSize: '13px' }}>+₹{lateFee.toFixed(2)}</span>}
                       </td>
-                      <td style={{ padding: '16px', color: '#999', fontSize: '13px' }}>{b.note || '-'}</td>
+                      <td>
+                        {lateInfo.isLate ? 
+                          <span style={{ color: '#e03e3e', fontWeight: '600' }}>Late ({lateInfo.daysLate}d)</span> : 
+                          <span style={{ color: '#eaaa08', fontWeight: '600' }}>Active</span>}
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button 
+                            className="btn btn-primary" 
+                            style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px', background: '#10b981', border: 'none' }} 
+                            onClick={() => handleReturnBook(b)}
+                          >
+                            Return
+                          </button>
+                          <button 
+                            className="btn" 
+                            style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px', background: '#e03e3e', color: 'white', border: 'none', cursor: 'pointer' }} 
+                            onClick={() => handleDeleteBorrowRecord(b.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  ))}
-                  {filteredBorrowers.length === 0 && <tr><td colSpan="8" style={{ textAlign:'center', padding: '40px', color: '#999' }}>No active borrow records found.</td></tr>}
+                  )})}
+                  {activeBorrowers.length === 0 && <tr><td colSpan="11" style={{ textAlign:'center', padding: '40px', color: '#999' }}>No active borrow records found.</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
         
+        {/* Return List Table View */}
+        <div style={{ marginTop: '40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color:'#37352f' }}>Return List</h1>
+            </div>
+            
+            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
+              <table className="notion-exact-table" style={{ minWidth: '800px' }}>
+                <thead>
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Book Title</th>
+                    <th>Category</th>
+                    <th>Borrow Date</th>
+                    <th>Return Date</th>
+                    <th>Late Status</th>
+                    <th>Total Paid</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {returnedBorrowers.map((b) => {
+                    const lateInfo = getLateInfo(b.borrowDate, b.rentDays, b.returnDate);
+                    const originalTotal = (b.book?.price || 0) * (b.rentDays || 0);
+                    const lateFee = lateInfo.isLate ? lateInfo.daysLate * (b.book?.price || 0) : 0;
+                    const totalPaid = originalTotal + lateFee;
+                    
+                    return (
+                    <tr key={b.id}>
+                      <td style={{ fontWeight: '600' }}>{b.member?.name}</td>
+                      <td 
+                        style={{ fontWeight:'600', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        title={b.book?.bookName}
+                      >
+                        {b.book?.bookName}
+                      </td>
+                      <td>
+                        <span className="notion-tag-pill" style={{ background: getTagColor(b.book?.bookCategory), color: getTagTextColor(b.book?.bookCategory) }}>
+                          {b.book?.bookCategory}
+                        </span>
+                      </td>
+                      <td>{b.borrowDate || '-'}</td>
+                      <td><span style={{ color: '#10b981', fontWeight: '600' }}>{b.returnDate}</span></td>
+                      <td>
+                        {lateInfo.isLate ? 
+                          <span style={{ color: '#e03e3e', fontWeight: '600' }}>{lateInfo.daysLate} days late</span> : 
+                          <span style={{ color: '#10b981', fontWeight: '500' }}>On Time</span>
+                        }
+                      </td>
+                      <td style={{ fontWeight: '700' }}>
+                        ₹{totalPaid.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button 
+                            className="btn" 
+                            style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px', background: '#e03e3e', color: 'white', border: 'none', cursor: 'pointer' }} 
+                            onClick={() => handleDeleteBorrowRecord(b.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )})}
+                  {returnedBorrowers.length === 0 && <tr><td colSpan="8" style={{ textAlign:'center', padding: '40px', color: '#999' }}>No return records found.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
         {/* Books Detailed Table View */}
         <div style={{ marginTop: '60px', marginBottom: '60px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -484,23 +749,32 @@ export default function AdminDashboard() {
                   <th>Author</th>
                   <th>Cover</th>
                   <th>Total</th>
-                  <th>Amount in Stock</th>
+                  <th>Stock</th>
                   <th>Price/Day</th>
                   <th>Status</th>
-                  <th>Borrower</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredBooks.map(b => (
                   <tr key={b.bookId}>
-                    <td style={{ fontWeight:'600', textDecoration:'underline', textDecorationColor:'rgba(55,53,47,0.2)' }}>{b.bookName}</td>
+                    <td 
+                      style={{ fontWeight:'600', maxWidth: '210px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={b.bookName}
+                    >
+                      {b.bookName}
+                    </td>
                     <td>
                       <span className="notion-tag-pill" style={{ background: getTagColor(b.bookCategory), color: getTagTextColor(b.bookCategory) }}>
                         {b.bookCategory}
                       </span>
                     </td>
-                    <td>{b.author}</td>
+                    <td 
+                      style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={b.author}
+                    >
+                      {b.author}
+                    </td>
                     <td>-</td>
                     <td>{b.totalCopies}</td>
                     <td>{b.amountInStock}</td>
@@ -524,17 +798,29 @@ export default function AdminDashboard() {
                         </div>
                       )}
                     </td>
-                    <td style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ width:'10px', height:'10px', borderRadius:'50%', background: b.status === 'Available' ? '#0f7b6c' : '#e03e3e' }}></div>
-                      {b.status}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width:'10px', height:'10px', borderRadius:'50%', background: b.amountInStock > 0 ? '#0f7b6c' : '#e03e3e' }}></div>
+                        {b.amountInStock > 0 ? 'Available' : 'Unavailable'}
+                      </div>
                     </td>
                     <td>
-                      {borrowers.filter(br => br.book?.bookId === b.bookId).map(br => (
-                        <span key={br.id} className="notion-page-link" style={{marginRight:'8px'}}>{br.member?.name}</span>
-                      ))}
-                    </td>
-                    <td>
-                      <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }} onClick={() => setEditingBook(b)}>Edit</button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          className="btn btn-primary" 
+                          style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }} 
+                          onClick={() => setEditingBook(b)}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="btn" 
+                          style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px', background: '#e03e3e', color: 'white', border: 'none', cursor: 'pointer' }} 
+                          onClick={() => handleDeleteBook(b.bookId)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -566,6 +852,7 @@ export default function AdminDashboard() {
                   <th>Address</th>
                   <th>Created time</th>
                   <th>Last edited time</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -579,12 +866,108 @@ export default function AdminDashboard() {
                     <td>{u.address || '-'}</td>
                     <td>{new Date(u.createTime).toLocaleString()}</td>
                     <td>{new Date(u.modifyTime).toLocaleString()}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          className="btn btn-primary" 
+                          style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }} 
+                          onClick={() => setSelectedMemberInfo(u)}
+                        >
+                          Info
+                        </button>
+                        <button 
+                          className="btn" 
+                          style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px', background: '#e03e3e', color: 'white', border: 'none', cursor: 'pointer' }} 
+                          onClick={() => handleDeleteMember(u.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
+      {/* Member Info Modal */}
+      {selectedMemberInfo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', width: '700px', maxWidth: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>Member Details: {selectedMemberInfo.name}</h2>
+              <button onClick={() => setSelectedMemberInfo(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#999' }}>✕</button>
+            </div>
+            
+            <div style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px', background: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
+              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Email</strong><span style={{fontSize:'16px', fontWeight:'500'}}>{selectedMemberInfo.email}</span></div>
+              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Phone</strong><span style={{fontSize:'16px', fontWeight:'500'}}>{selectedMemberInfo.phno || '-'}</span></div>
+              <div><strong style={{color:'#666', fontSize:'12px', display:'block', textTransform:'uppercase'}}>Total Revenue</strong><span style={{fontSize:'16px', fontWeight:'600', color:'#0f7b6c'}}>₹
+                {borrowers
+                  .filter(b => b.member?.id === selectedMemberInfo.id)
+                  .reduce((sum, b) => sum + ((b.book?.price || 0) * (b.rentDays || 0)), 0)
+                  .toFixed(2)}
+              </span></div>
+            </div>
+
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#37352f' }}>Borrow History</h3>
+            <table className="notion-exact-table" style={{ width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{padding: '12px', textAlign:'left'}}>Book</th>
+                  <th style={{padding: '12px', textAlign:'left'}}>Borrow Date</th>
+                  <th style={{padding: '12px', textAlign:'left'}}>Return Date</th>
+                  <th style={{padding: '12px', textAlign:'left'}}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {borrowers.filter(b => b.member?.id === selectedMemberInfo.id).map(b => (
+                  <tr key={b.id} style={{borderBottom: '1px solid #eee'}}>
+                    <td style={{padding: '12px', fontWeight:'500'}}>{b.book?.bookName}</td>
+                    <td style={{padding: '12px'}}>{b.borrowDate || '-'}</td>
+                    <td style={{padding: '12px'}}>{b.returnDate || '-'}</td>
+                    <td style={{padding: '12px'}}>
+                      {b.status === 'Returned' ? 
+                        <span style={{ color: '#10b981', fontWeight: '600', fontSize:'13px' }}>Returned</span> : 
+                        <span style={{ color: '#eaaa08', fontWeight: '600', fontSize:'13px' }}>Active</span>}
+                    </td>
+                  </tr>
+                ))}
+                {borrowers.filter(b => b.member?.id === selectedMemberInfo.id).length === 0 && (
+                  <tr><td colSpan="4" style={{ textAlign: 'center', color: '#999', padding: '20px' }}>No borrow history found for this member.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', width: '400px', maxWidth: '90%', textAlign: 'center' }}>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '700', color: '#1a1a1a' }}>{confirmModal.title}</h2>
+            <p style={{ margin: '0 0 32px 0', color: '#666', lineHeight: '1.5' }}>{confirmModal.message}</p>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <button 
+                className="btn" 
+                style={{ padding: '8px 24px', borderRadius: '8px', background: '#f0f0f0', color: '#333', border: 'none', cursor: 'pointer', fontWeight: '600' }} 
+                onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '8px 24px', borderRadius: '8px', background: confirmModal.title.includes('Delete') ? '#e03e3e' : '#10b981', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }} 
+                onClick={confirmModal.onConfirm}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>
