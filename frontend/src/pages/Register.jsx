@@ -1,17 +1,46 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
+import { FaGithub } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
+import { auth, googleProvider, githubProvider } from '../config/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export default function Register() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', phno: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
+  const handleOAuth = async (providerName) => {
+    try {
+      const provider = providerName === 'GOOGLE' ? googleProvider : githubProvider;
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const oauthData = {
+        email: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        profilePic: user.photoURL || 'default-avatar.png',
+        authProvider: providerName,
+        password: ''
+      };
+      
+      const response = await axios.post('/api/users/oauth', oauthData);
+      login(response.data);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError(`${providerName} signup failed.`);
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8081/api/users/register', formData);
+      await axios.post('/api/users/register', formData);
       navigate('/login');
     } catch (err) {
       setError('Registration failed. Please try again.');
@@ -25,7 +54,7 @@ export default function Register() {
       <div style={{ 
         display: 'flex', 
         width: '100%', 
-        maxWidth: '900px', 
+        maxWidth: '550px', 
         background: '#fff', 
         borderRadius: '20px', 
         overflow: 'hidden', 
@@ -33,33 +62,9 @@ export default function Register() {
         border: '1px solid rgba(163, 177, 138, 0.3)'
       }}>
         
-        {/* Left Side: Image Banner */}
-        <div style={{ flex: 1, position: 'relative', display: 'none' }}>
-          <img 
-            src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=800&q=80" 
-            alt="Library" 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-          />
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, rgba(52, 78, 65, 0.3), rgba(52, 78, 65, 0.8))' }}></div>
-          <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', color: '#fff' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '12px' }}>Join the Community</h2>
-            <p style={{ color: '#dad7cd', fontSize: '16px', lineHeight: '1.5' }}>Create an account to track your reading progress and borrow books instantly.</p>
-          </div>
-        </div>
-
-        {/* CSS to handle the responsive display of the left image */}
-        <style>{`
-          @media (min-width: 768px) {
-            div[style*="flex: 1"] { display: block !important; }
-          }
-        `}</style>
-
-        {/* Right Side: Form */}
-        <div style={{ flex: 1, padding: '40px', background: '#f8f9fa' }}>
+        {/* Form Container */}
+        <div style={{ padding: '40px', background: '#f8f9fa', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(88, 129, 87, 0.1)', borderRadius: '16px', marginBottom: '12px' }}>
-              <UserPlus size={28} color="#588157" />
-            </div>
             <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#3a5a40' }}>Sign Up</h2>
             <p style={{ color: '#588157', fontSize: '14px', marginTop: '4px' }}>Join the library platform</p>
           </div>
@@ -130,6 +135,33 @@ export default function Register() {
               Create Account
             </button>
           </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+            <div style={{ flex: 1, height: '1px', background: '#ced4da' }}></div>
+            <span style={{ padding: '0 12px', color: '#6c757d', fontSize: '14px', fontWeight: '500' }}>Or sign up with</span>
+            <div style={{ flex: 1, height: '1px', background: '#ced4da' }}></div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+            <button 
+              type="button"
+              onClick={() => handleOAuth('GOOGLE')}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
+              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+            >
+              <FcGoogle size={20} style={{ pointerEvents: 'none' }} /> Google
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleOAuth('GITHUB')}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
+              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+            >
+              <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} /> GitHub
+            </button>
+          </div>
 
           <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#588157' }}>
             Already have an account? <Link to="/login" style={{ color: '#3a5a40', fontWeight: '700', textDecoration: 'none' }}>Log in</Link>

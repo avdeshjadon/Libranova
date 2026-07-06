@@ -101,11 +101,11 @@ public class AdminController {
         
         String fileName = "default.jpg";
         if (coverImage != null && !coverImage.isEmpty()) {
-            fileName = System.currentTimeMillis() + "_" + coverImage.getOriginalFilename().replaceAll("\\s+", "_");
             try {
-                Path path = Paths.get("frontend/public/books/" + fileName);
-                Files.createDirectories(path.getParent());
-                Files.write(path, coverImage.getBytes());
+                String base64Image = java.util.Base64.getEncoder().encodeToString(coverImage.getBytes());
+                String contentType = coverImage.getContentType();
+                if (contentType == null) contentType = "image/jpeg";
+                fileName = "data:" + contentType + ";base64," + base64Image;
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -137,19 +137,14 @@ public class AdminController {
             @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
         return bookRepository.findById(id).map(book -> {
             if (coverImage != null && !coverImage.isEmpty()) {
-                if (book.getPhotoName() != null && !book.getPhotoName().equals("default.jpg") && !book.getPhotoName().isEmpty()) {
-                    try {
-                        Files.deleteIfExists(Paths.get("frontend/public/books/" + book.getPhotoName()));
-                    } catch (Exception e) {}
-                }
-                
-                String fileName = System.currentTimeMillis() + "_" + coverImage.getOriginalFilename().replaceAll("\\s+", "_");
                 try {
-                    Path path = Paths.get("frontend/public/books/" + fileName);
-                    Files.createDirectories(path.getParent());
-                    Files.write(path, coverImage.getBytes());
-                    book.setPhotoName(fileName);
-                } catch (Exception e) {}
+                    String base64Image = java.util.Base64.getEncoder().encodeToString(coverImage.getBytes());
+                    String contentType = coverImage.getContentType();
+                    if (contentType == null) contentType = "image/jpeg";
+                    book.setPhotoName("data:" + contentType + ";base64," + base64Image);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             
             book.setBookName(bookName);

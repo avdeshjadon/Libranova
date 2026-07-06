@@ -1,80 +1,32 @@
-# Libranova - Library Management System
+# Libranova - Full-Stack Library Management System
 
-Libranova is a comprehensive Library Management System designed specifically for digital libraries. It provides a seamless platform for users to browse, rent (borrow), and manage their favorite books and e-books. It features a modern, responsive frontend and a robust backend to handle library inventory, user authentication, and book circulation/rentals.
+Libranova is a comprehensive, cloud-ready Library Management System designed specifically for digital libraries. It provides a seamless platform for users to browse, rent (borrow), and manage their favorite books and e-books, while giving administrators a powerful dashboard to manage inventory and user accounts.
 
-## Tech Stack
+Built with modern web technologies, it features a responsive frontend and a robust backend designed for easy deployment on free-tier cloud platforms.
 
-### Frontend
-- React 19 (via Vite)
-- React Router DOM for navigation
-- Axios for API requests
-- GSAP for animations
-- Recharts for data visualization
-- Lucide React and React Icons for iconography
+## Tech Stack & Architecture
 
-### Backend
-- Java 17
-- Spring Boot 3.2.5
-- Spring Web
-- Spring Data JPA
-- MySQL Database
-- Lombok
+### Frontend (User Interface)
+- **Framework:** React 19 (via Vite)
+- **Routing:** React Router DOM
+- **API Client:** Axios
+- **Animations:** GSAP
+- **Icons:** Lucide React & React Icons
 
-## Prerequisites
+### Backend (Core Services)
+- **Framework:** Spring Boot 3.2.5 (Java 17)
+- **Server:** Embedded Tomcat (No external setup required)
+- **Data Access:** Spring Data JPA / Hibernate
+- **Database:** MySQL (Configured for cloud platforms like Aiven)
+- **Image Storage:** Base64 Encoding directly into MySQL (Cloud-persistent)
 
-Before you begin, ensure you have the following installed on your local machine:
-- Node.js (version 18 or higher)
-- npm (Node Package Manager)
-- Java Development Kit (JDK 17)
-- Maven
-- MySQL Server
+## Key Features
+
+- **Role-Based Access Control:** Distinct views and permissions for Users and Administrators.
+- **Admin Dashboard:** Manage book inventory, track rentals, and manage user accounts.
+- **Base64 Image Uploads:** Book covers and user avatars are converted to Base64 strings and stored directly in the database, ensuring your images persist across ephemeral cloud servers.
+- **Cloud-Ready Configuration:** Fully configured to use environment variables (`.env`) for database connections and API endpoints.
 
 ## Getting Started
 
-Follow these steps to set up the project locally.
-
-### 1. Database Setup
-
-Create a new MySQL database for the application. Update the database credentials in the backend configuration file (`src/main/resources/application.properties` or `application.yml`).
-
-### 2. Backend Setup
-
-1. Navigate to the project root directory.
-2. Run the Spring Boot application using Maven:
-   ```bash
-   mvn spring-boot:run
-   ```
-3. The backend server will start (usually on `http://localhost:8080`).
-
-### 3. Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install the necessary dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open the provided local URL in your browser to view the application.
-
-## Features
-
-- Browse a wide collection of books and digital materials across various categories (Programming, Business, Fiction, Sci-Fi).
-- User authentication (Login and Registration).
-- Manage personal rentals (My Rentals).
-- Interactive UI with animations using GSAP.
-
-## Project Structure
-
-- `frontend/`: Contains the React application code.
-- `src/main/java/com/ebook/`: Contains the Spring Boot backend source code (Library Core Services).
-- `pom.xml`: Maven configuration file for backend dependencies.
-
-## License
-
-This project is licensed under the MIT License.
+For detailed step-by-step instructions on how to run this project locally or deploy it to the cloud (Aiven + Render + Vercel), please read the [run.md](./run.md) file.

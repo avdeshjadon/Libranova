@@ -1,6 +1,6 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, BookOpen, ChevronDown, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, BookOpen, ChevronDown, User as UserIcon } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import "./Navbar.css";
@@ -13,99 +13,17 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
+    setShowUserDropdown(false);
     navigate("/login");
   };
 
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  useEffect(() => {
+    setShowUserDropdown(false);
+    setShowCategories(false);
+  }, [path]);
+
   const [showCategories, setShowCategories] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState('account');
-  const [profileForm, setProfileForm] = useState({ name: '', email: '', phno: '', password: '', profileImage: null, profilePicString: '' });
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [toast, setToast] = useState({ msg: '', isError: false });
-
-  const showToast = (msg, isError = false) => {
-    setToast({ msg, isError });
-    setTimeout(() => setToast({ msg: '', isError: false }), 3000);
-  };
-
-  const defaultAvatars = [
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Aneka',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Tinkerbell',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Oliver',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Bella'
-  ];
-
-  const openSettings = () => {
-    if(user) setProfileForm({ name: user.name || '', email: user.email || '', phno: user.phno || '', password: '', profileImage: null, profilePicString: '' });
-    setShowSettingsModal(true);
-    setShowUserDropdown(false);
-  };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('name', profileForm.name);
-    formData.append('email', profileForm.email);
-    formData.append('phno', profileForm.phno);
-    if(profileForm.password) formData.append('password', profileForm.password);
-    if(profileForm.profileImage) {
-        formData.append('profileImage', profileForm.profileImage);
-    } else if (profileForm.profilePicString) {
-        formData.append('profilePicString', profileForm.profilePicString);
-    }
-
-    try {
-      const res = await axios.put(`http://localhost:8081/api/users/${user.id}/profile`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      const updatedUser = res.data;
-
-      if (profileForm.password || profileForm.email !== user.email) {
-         alert("Profile updated successfully! Please re-login if you changed your email or password.");
-         window.location.href = '/login';
-      } else {
-         login(updatedUser); // Update local user state
-         setShowSettingsModal(false);
-         showToast("Profile updated successfully!");
-      }
-    } catch(err) {
-      showToast("Failed to update profile: " + (err.response?.data || err.message), true);
-    }
-  };
-
-  const handleDownloadAllData = async () => {
-    try {
-      const [usersRes, booksRes, borrowRes] = await Promise.all([
-        axios.get('http://localhost:8081/api/admin/users'),
-        axios.get('http://localhost:8081/api/books'),
-        axios.get('http://localhost:8081/api/borrow')
-      ]);
-      const data = { users: usersRes.data, books: booksRes.data, borrowers: borrowRes.data };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `libranova_admin_data_${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      alert("Failed to download data");
-    }
-  };
-
-  const handleDeleteAllData = async () => {
-    try {
-      await axios.delete('http://localhost:8081/api/admin/data/all');
-      setShowConfirmDelete(false);
-      alert("All data deleted successfully!");
-      window.location.reload();
-    } catch(err) {
-      alert("Failed to delete data: " + (err.response?.data || err.message));
-    }
-  };
 
   return (
     <>
@@ -140,7 +58,7 @@ export default function Navbar() {
           {user ? (
             <div style={{ position: 'relative' }}>
               <button onClick={() => setShowUserDropdown(!showUserDropdown)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src={user.profilePic && user.profilePic !== 'default-avatar.png' ? (user.profilePic.startsWith('http') ? user.profilePic : `/avatars/${user.profilePic}`) : `https://ui-avatars.com/api/?name=${user.name}&background=random`} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #a3b18a' }} />
+                <img src={user.profilePic && user.profilePic !== 'default-avatar.png' ? ((user.profilePic.startsWith('http') || user.profilePic.startsWith('data:image')) ? user.profilePic : `/avatars/${user.profilePic}`) : `https://ui-avatars.com/api/?name=${user.name}&background=random`} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #a3b18a' }} />
                 <span style={{ fontWeight: '600', color: '#344e41' }}>{user.name}</span>
                 <ChevronDown size={16} color="#344e41" />
               </button>
@@ -149,7 +67,7 @@ export default function Navbar() {
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '12px', background: '#fff', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', width: '240px', zIndex: 1000, overflow: 'hidden', border: '1px solid #eaeaea' }}>
                   
                   <div style={{ padding: '16px', borderBottom: '1px solid #eaeaea', display: 'flex', alignItems: 'center', gap: '12px', background: '#f8f9fa' }}>
-                    <img src={user.profilePic && user.profilePic !== 'default-avatar.png' ? (user.profilePic.startsWith('http') ? user.profilePic : `/avatars/${user.profilePic}`) : `https://ui-avatars.com/api/?name=${user.name}&background=random`} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <img src={user.profilePic && user.profilePic !== 'default-avatar.png' ? ((user.profilePic.startsWith('http') || user.profilePic.startsWith('data:image')) ? user.profilePic : `/avatars/${user.profilePic}`) : `https://ui-avatars.com/api/?name=${user.name}&background=random`} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
                     <div>
                       <div style={{ fontWeight: '700', color: '#333', fontSize: '15px' }}>{user.name}</div>
                       <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{user.role}</div>
@@ -157,9 +75,9 @@ export default function Navbar() {
                   </div>
                   
                   <div style={{ padding: '8px 0' }}>
-                    <button onClick={openSettings} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: '#444' }}>
+                    <Link to="/profile" onClick={() => setShowUserDropdown(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#444', textDecoration: 'none', fontSize: '15px' }}>
                       <UserIcon size={18} color="#588157" /> Manage Profile
-                    </button>
+                    </Link>
                     
                     {user.role === 'USER' && (
                       <Link to="/cart" onClick={() => setShowUserDropdown(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#444', textDecoration: 'none', fontSize: '15px' }}>
@@ -218,158 +136,7 @@ export default function Navbar() {
       </div>
     </nav>
 
-      {/* Profile Settings Modal */}
-      {showSettingsModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', width: '800px', maxWidth: '95%', height: '550px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', overflow: 'hidden' }}>
-            
-            {/* Sidebar */}
-            <div style={{ width: '250px', background: '#f8f9fa', borderRight: '1px solid #e9ecef', padding: '24px 0', display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ padding: '0 24px', margin: '0 0 24px 0', fontSize: '18px', color: '#1a1a1a', fontWeight: '700' }}>Settings</h2>
-              
-              <button 
-                onClick={() => setActiveSettingsTab('account')}
-                style={{ background: activeSettingsTab === 'account' ? '#eef2ff' : 'transparent', border: 'none', color: activeSettingsTab === 'account' ? '#4f46e5' : '#4b5563', padding: '12px 24px', textAlign: 'left', cursor: 'pointer', fontSize: '15px', fontWeight: '500', borderRight: activeSettingsTab === 'account' ? '3px solid #4f46e5' : '3px solid transparent', transition: 'all 0.2s' }}>
-                Profile Info
-              </button>
-              {user?.role === 'ADMIN' && (
-                <button 
-                  onClick={() => setActiveSettingsTab('data')}
-                  style={{ background: activeSettingsTab === 'data' ? '#eef2ff' : 'transparent', border: 'none', color: activeSettingsTab === 'data' ? '#4f46e5' : '#4b5563', padding: '12px 24px', textAlign: 'left', cursor: 'pointer', fontSize: '15px', fontWeight: '500', borderRight: activeSettingsTab === 'data' ? '3px solid #4f46e5' : '3px solid transparent', transition: 'all 0.2s' }}>
-                  Data Management
-                </button>
-              )}
-            </div>
 
-            {/* Content Area */}
-            <div style={{ flex: 1, padding: '32px', overflowY: 'auto', position: 'relative' }}>
-              <button type="button" onClick={() => setShowSettingsModal(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px', padding: '4px' }}>✕</button>
-              
-              {activeSettingsTab === 'account' && (
-                <div>
-                  <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', color: '#1a1a1a' }}>Update Profile</h3>
-                  <form onSubmit={handleUpdateProfile}>
-                    
-                    <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>Full Name</label>
-                        <input className="form-control" value={profileForm.name} onChange={e=>setProfileForm({...profileForm, name: e.target.value})} required style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>Phone Number</label>
-                        <input className="form-control" value={profileForm.phno} onChange={e=>setProfileForm({...profileForm, phno: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>Email Address</label>
-                        <input type="email" className="form-control" value={profileForm.email} onChange={e=>setProfileForm({...profileForm, email: e.target.value})} required style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>New Password</label>
-                        <input type="password" className="form-control" placeholder="Leave blank to keep current" value={profileForm.password} onChange={e=>setProfileForm({...profileForm, password: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
-                      </div>
-                    </div>
-
-                    <div style={{ marginBottom: '24px' }}>
-                      <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>Profile Picture</label>
-                      <div 
-                        style={{ border: '2px dashed #ccc', padding: '20px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', background: '#fafafa', color: '#666', marginBottom: '16px' }}
-                        onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) setProfileForm({...profileForm, profileImage: file, profilePicString: ''}); }}
-                        onDragOver={(e) => e.preventDefault()}
-                        onClick={() => document.getElementById('profilePicInput').click()}
-                      >
-                        {profileForm.profileImage ? (
-                          <span style={{ color: '#166534', fontWeight: '600' }}>Selected: {profileForm.profileImage.name}</span>
-                        ) : (
-                          <span>Drag and drop profile picture here, or click to browse</span>
-                        )}
-                        <input type="file" id="profilePicInput" hidden accept="image/*" onChange={(e) => { if(e.target.files[0]) setProfileForm({...profileForm, profileImage: e.target.files[0], profilePicString: ''}); }} />
-                      </div>
-
-                      <label style={{ display: 'block', fontSize: '14px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}>Or choose a default avatar:</label>
-                      <div style={{ display: 'flex', gap: '12px' }}>
-                        {defaultAvatars.map((avatar, idx) => (
-                          <img 
-                            key={idx} 
-                            src={avatar} 
-                            alt={`Avatar ${idx}`} 
-                            style={{ 
-                              width: '48px', height: '48px', borderRadius: '50%', cursor: 'pointer', objectFit: 'cover',
-                              border: profileForm.profilePicString === avatar ? '3px solid #588157' : '1px solid #ccc',
-                              boxShadow: profileForm.profilePicString === avatar ? '0 0 10px rgba(88,129,87,0.3)' : 'none'
-                            }}
-                            onClick={() => setProfileForm({...profileForm, profilePicString: avatar, profileImage: null})}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <button type="submit" className="btn btn-primary" style={{ padding: '12px 32px', borderRadius: '8px', fontWeight: '600', background: '#344e41', color: '#fff', border: 'none', cursor: 'pointer' }}>Save Changes</button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {activeSettingsTab === 'data' && user?.role === 'ADMIN' && (
-                <div>
-                  <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', color: '#1a1a1a' }}>Data Management</h3>
-                  
-                  <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#374151' }}>Export System Data</h4>
-                    <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#6b7280' }}>Download a complete JSON backup of all books, members, and borrowing records.</p>
-                    <button onClick={handleDownloadAllData} style={{ background: '#fff', border: '1px solid #d1d5db', padding: '10px 20px', borderRadius: '8px', color: '#374151', fontWeight: '600', cursor: 'pointer' }}>
-                      ⬇ Download Data
-                    </button>
-                  </div>
-
-                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '20px' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#991b1b' }}>Danger Zone</h4>
-                    <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#b91c1c' }}>Permanently erase all system data. Admin accounts will be preserved.</p>
-                    <button onClick={() => setShowConfirmDelete(true)} style={{ background: '#dc2626', border: 'none', padding: '10px 20px', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer' }}>
-                      ⚠ Delete All Data
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Popup */}
-      {showConfirmDelete && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '24px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              ⚠ Confirm Deletion
-            </h2>
-            <p style={{ color: '#4b5563', fontSize: '15px', lineHeight: '1.5', marginBottom: '24px' }}>
-              Are you absolutely sure you want to delete all system data? This action <strong>cannot be undone</strong>.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button type="button" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }} onClick={() => setShowConfirmDelete(false)}>Cancel</button>
-              <button type="button" style={{ background: '#dc2626', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }} onClick={handleDeleteAllData}>Yes, Erase Everything</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {toast.msg && (
-        <div style={{
-          position: "fixed", bottom: "30px", right: "30px",
-          background: toast.isError ? "#ef4444" : "#3a5a40",
-          color: "#fff", padding: "16px 24px", borderRadius: "12px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.4)", zIndex: 999999,
-          display: "flex", alignItems: "center", gap: "12px",
-          fontSize: "15px", fontWeight: "500", animation: "slideUpFade 0.3s ease-out forwards"
-        }}>
-          {toast.msg}
-        </div>
-      )}
     </>
   );
 }

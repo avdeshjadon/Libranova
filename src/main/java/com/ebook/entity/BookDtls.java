@@ -21,6 +21,7 @@ public class BookDtls {
     private String price;
     private String bookCategory;
     private String status;
+    @jakarta.persistence.Column(columnDefinition = "LONGTEXT")
     private String photoName;
     private String email;
 

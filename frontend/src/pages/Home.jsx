@@ -34,7 +34,7 @@ export default function Home() {
 
   const fetchBooks = async () => {
     try {
-      const res = await axios.get("http://localhost:8081/api/books");
+      const res = await axios.get("/api/books");
       if (res.data.length > 0) {
         setBooks(res.data);
       } else {
@@ -96,7 +96,7 @@ export default function Home() {
       formData.append("date", new Date().toISOString().split("T")[0]);
       formData.append("rentDays", rentDays);
 
-      await axios.post("http://localhost:8081/api/borrow", formData);
+      await axios.post("/api/borrow", formData);
       showToast(
         `Successfully rented ${selectedBook.bookName} for ${rentDays} days!`,
       );
@@ -139,8 +139,8 @@ export default function Home() {
 
   // Get a specific image based on upload or fallback to unsplash
   const getCoverImage = (book, index) => {
-    // If the admin uploaded a real cover, it will be saved as something like 12345_cover.jpg in public/books
     if (book.photoName && book.photoName !== "default.jpg" && book.photoName !== "") {
+      if (book.photoName.startsWith("data:image")) return book.photoName;
       return `/books/${book.photoName}`;
     }
     

@@ -28,6 +28,8 @@ public class User {
 
     private String role = "USER"; // "ADMIN" or "USER"
     private String subscription = "FREE"; // "FREE", "BASIC", "PREMIUM"
+    private String authProvider = "LOCAL"; // "LOCAL", "GOOGLE", "GITHUB"
+    @jakarta.persistence.Column(columnDefinition = "LONGTEXT")
     private String profilePic = "default-avatar.png";
     private boolean isBlocked = false;
 
@@ -87,4 +89,7 @@ public class User {
     
     public String getProfilePic() { return profilePic; }
     public void setProfilePic(String profilePic) { this.profilePic = profilePic; }
+    
+    public String getAuthProvider() { return authProvider; }
+    public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
 }

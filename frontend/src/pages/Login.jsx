@@ -2,7 +2,10 @@ import { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { BookOpen } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
+import { auth, googleProvider, githubProvider } from '../config/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,10 +14,34 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const handleOAuth = async (providerName) => {
+    try {
+      const provider = providerName === 'GOOGLE' ? googleProvider : githubProvider;
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const oauthData = {
+        email: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        profilePic: user.photoURL || 'default-avatar.png',
+        authProvider: providerName,
+        password: ''
+      };
+      
+      const response = await axios.post('/api/users/oauth', oauthData);
+      login(response.data);
+      if (response.data.role === 'ADMIN') navigate('/admin');
+      else navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError(`${providerName} login failed.`);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8081/api/users/login', { email, password });
+      const response = await axios.post('/api/users/login', { email, password });
       login(response.data);
       if (response.data.role === 'ADMIN') navigate('/admin');
       else navigate('/');
@@ -30,7 +57,7 @@ export default function Login() {
       <div style={{ 
         display: 'flex', 
         width: '100%', 
-        maxWidth: '900px', 
+        maxWidth: '450px', 
         background: '#fff', 
         borderRadius: '20px', 
         overflow: 'hidden', 
@@ -38,33 +65,9 @@ export default function Login() {
         border: '1px solid rgba(163, 177, 138, 0.3)'
       }}>
         
-        {/* Left Side: Image Banner */}
-        <div style={{ flex: 1, position: 'relative', display: 'none' }}>
-          <img 
-            src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80" 
-            alt="Library" 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-          />
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, rgba(52, 78, 65, 0.4), rgba(52, 78, 65, 0.8))' }}></div>
-          <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', color: '#fff' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '12px' }}>Welcome Back!</h2>
-            <p style={{ color: '#dad7cd', fontSize: '16px', lineHeight: '1.5' }}>Log in to access your curated collection of premium e-books.</p>
-          </div>
-        </div>
-
-        {/* CSS to handle the responsive display of the left image */}
-        <style>{`
-          @media (min-width: 768px) {
-            div[style*="flex: 1"] { display: block !important; }
-          }
-        `}</style>
-
-        {/* Right Side: Form */}
-        <div style={{ flex: 1, padding: '50px 40px', background: '#f8f9fa' }}>
+        {/* Form Container */}
+        <div style={{ padding: '50px 40px', background: '#f8f9fa', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(88, 129, 87, 0.1)', borderRadius: '16px', marginBottom: '16px' }}>
-              <BookOpen size={28} color="#588157" />
-            </div>
             <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#3a5a40' }}>Log In</h2>
             <p style={{ color: '#588157', fontSize: '15px', marginTop: '8px' }}>Enter your details to continue</p>
           </div>
@@ -86,7 +89,10 @@ export default function Login() {
             </div>
             
             <div style={{ marginBottom: '30px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#344e41', marginBottom: '8px' }}>Password</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#344e41' }}>Password</label>
+                <Link to="/forgot-password" style={{ fontSize: '13px', color: '#588157', fontWeight: '600', textDecoration: 'none' }}>Forgot Password?</Link>
+              </div>
               <input 
                 type="password" 
                 value={password} 
@@ -107,6 +113,33 @@ export default function Login() {
               Sign In
             </button>
           </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+            <div style={{ flex: 1, height: '1px', background: '#ced4da' }}></div>
+            <span style={{ padding: '0 12px', color: '#6c757d', fontSize: '14px', fontWeight: '500' }}>Or continue with</span>
+            <div style={{ flex: 1, height: '1px', background: '#ced4da' }}></div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+            <button 
+              type="button"
+              onClick={() => handleOAuth('GOOGLE')}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
+              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+            >
+              <FcGoogle size={20} style={{ pointerEvents: 'none' }} /> Google
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleOAuth('GITHUB')}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
+              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+            >
+              <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} /> GitHub
+            </button>
+          </div>
 
           <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '14px', color: '#588157' }}>
             Don't have an account? <Link to="/register" style={{ color: '#3a5a40', fontWeight: '700', textDecoration: 'none' }}>Create one</Link>

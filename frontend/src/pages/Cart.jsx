@@ -21,7 +21,7 @@ export default function Cart() {
 
   const fetchRentals = async () => {
     try {
-      const res = await axios.get(`http://localhost:8081/api/borrow`);
+      const res = await axios.get(`/api/borrow`);
       const userRentals = res.data.filter(b => b.member?.id === user.id);
       setRentals(userRentals);
     } catch (err) {

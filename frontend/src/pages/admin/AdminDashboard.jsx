@@ -63,9 +63,9 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const [usersRes, booksRes, borrowRes] = await Promise.all([
-        axios.get('http://localhost:8081/api/admin/users'),
-        axios.get('http://localhost:8081/api/books'),
-        axios.get('http://localhost:8081/api/borrow')
+        axios.get('/api/admin/users'),
+        axios.get('/api/books'),
+        axios.get('/api/borrow')
       ]);
       setUsers(usersRes.data);
       setBooks(booksRes.data);
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      await axios.post('http://localhost:8081/api/admin/books/with-cover', formData, {
+      await axios.post('/api/admin/books/with-cover', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setShowAddBook(false);
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
   const handleAddBorrower = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`http://localhost:8081/api/borrow?userId=${borrowRequest.userId}&bookId=${borrowRequest.bookId}&note=${borrowRequest.note}&date=${borrowRequest.date}&rentDays=${borrowRequest.rentDays}&paymentMode=${borrowRequest.paymentMode}`);
+      await axios.post(`/api/borrow?userId=${borrowRequest.userId}&bookId=${borrowRequest.bookId}&note=${borrowRequest.note}&date=${borrowRequest.date}&rentDays=${borrowRequest.rentDays}&paymentMode=${borrowRequest.paymentMode}`);
       setShowAddBorrower(false);
       fetchData();
     } catch(err) {
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8081/api/users/register', newMember);
+      await axios.post('/api/users/register', newMember);
       setShowAddMember(false);
       setNewMember({ name: '', email: '', phno: '', address: '', password: '' });
       fetchData();
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
     }
     try {
       const updatedBook = { ...book, price: parseFloat(tempPrice) };
-      await axios.put(`http://localhost:8081/api/books/${book.bookId}`, updatedBook);
+      await axios.put(`/api/books/${book.bookId}`, updatedBook);
       setEditingPriceId(null);
       fetchData(); // Refresh all data to sync everywhere instantly
     } catch (err) {
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      await axios.put(`http://localhost:8081/api/admin/books/${editingBook.bookId}/with-cover`, formData, {
+      await axios.put(`/api/admin/books/${editingBook.bookId}/with-cover`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setEditingBook(null);
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
   const handleDeleteBook = (id) => {
     executeWithConfirm('Delete Book', 'Are you sure you want to permanently delete this book?', async () => {
       try {
-        await axios.delete(`http://localhost:8081/api/books/${id}`);
+        await axios.delete(`/api/books/${id}`);
         fetchData();
       } catch(err) { alert('Failed to delete book'); }
     });
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
   const handleDeleteMember = (id) => {
     executeWithConfirm('Delete Member', 'Are you sure you want to permanently delete this member?', async () => {
       try {
-        await axios.delete(`http://localhost:8081/api/users/${id}`);
+        await axios.delete(`/api/users/${id}`);
         fetchData();
       } catch(err) { alert('Failed to delete member'); }
     });
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
   const handleDeleteBorrowRecord = (id) => {
     executeWithConfirm('Delete Record', 'Are you sure you want to permanently delete this borrow record?', async () => {
       try {
-        await axios.delete(`http://localhost:8081/api/borrow/${id}`);
+        await axios.delete(`/api/borrow/${id}`);
         fetchData();
       } catch(err) { alert('Failed to delete record'); }
     });
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
 
     executeWithConfirm(title, message, async () => {
       try {
-        await axios.put(`http://localhost:8081/api/borrow/${borrowRecord.id}/return`);
+        await axios.put(`/api/borrow/${borrowRecord.id}/return`);
         fetchData();
       } catch(err) { alert('Failed to return book: ' + (err.response?.data || err.message)); }
     });
@@ -898,7 +898,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                 <img 
-                  src={selectedMemberInfo.profilePic?.startsWith('http') ? selectedMemberInfo.profilePic : `/avatars/${selectedMemberInfo.profilePic || 'default-avatar.png'}`} 
+                  src={(selectedMemberInfo.profilePic?.startsWith('http') || selectedMemberInfo.profilePic?.startsWith('data:image')) ? selectedMemberInfo.profilePic : `/avatars/${selectedMemberInfo.profilePic || 'default-avatar.png'}`} 
                   alt={selectedMemberInfo.name} 
                   style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e0e1dd' }} 
                   onError={(e) => { e.target.src = "https://api.dicebear.com/9.x/avataaars/svg?seed=Fallback"; }}
