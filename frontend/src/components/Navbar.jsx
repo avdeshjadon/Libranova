@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, BookOpen, ChevronDown, User as UserIcon } from "lucide-react";
+import { LogOut, BookOpen, ChevronDown, User as UserIcon, Loader2 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import "./Navbar.css";
@@ -11,10 +11,15 @@ export default function Navbar() {
   const location = useLocation();
   const path = location.pathname;
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const handleLogout = () => {
-    logout();
-    setShowUserDropdown(false);
-    navigate("/login");
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      logout();
+      setShowUserDropdown(false);
+      navigate("/login");
+    }, 600); // Add a small delay for the spinner effect
   };
 
   useEffect(() => {
@@ -106,8 +111,9 @@ export default function Navbar() {
 
                     <div style={{ borderTop: '1px solid #eaeaea', margin: '8px 0' }}></div>
 
-                    <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: '#dc2626' }}>
-                      <LogOut size={18} /> Logout
+                    <button onClick={handleLogout} disabled={isLoggingOut} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', background: 'transparent', border: 'none', cursor: isLoggingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: '#dc2626' }}>
+                      {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />} 
+                      {isLoggingOut ? 'Logging out...' : 'Logout'}
                     </button>
                   </div>
                 </div>

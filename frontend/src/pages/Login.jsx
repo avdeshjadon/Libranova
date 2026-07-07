@@ -6,15 +6,19 @@ import { FaGithub } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider, githubProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOAuthSubmitting, setIsOAuthSubmitting] = useState(null);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleOAuth = async (providerName) => {
+    setIsOAuthSubmitting(providerName);
     try {
       const provider = providerName === 'GOOGLE' ? googleProvider : githubProvider;
       const result = await signInWithPopup(auth, provider);
@@ -35,11 +39,14 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       setError(`${providerName} login failed.`);
+    } finally {
+      setIsOAuthSubmitting(null);
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await axios.post('/api/users/login', { email, password });
       login(response.data);
@@ -47,6 +54,8 @@ export default function Login() {
       else navigate('/');
     } catch (err) {
       setError(err.response?.data || 'Invalid credentials');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -106,11 +115,13 @@ export default function Login() {
             
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '14px', background: '#588157', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(88, 129, 87, 0.3)' }}
-              onMouseOver={(e) => e.target.style.background = '#3a5a40'}
-              onMouseOut={(e) => e.target.style.background = '#588157'}
+              disabled={isSubmitting}
+              style={{ width: '100%', padding: '14px', background: '#588157', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(88, 129, 87, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              onMouseOver={(e) => { if (!isSubmitting) e.target.style.background = '#3a5a40'; }}
+              onMouseOut={(e) => { if (!isSubmitting) e.target.style.background = '#588157'; }}
             >
-              Sign In
+              {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
@@ -124,20 +135,22 @@ export default function Login() {
             <button 
               type="button"
               onClick={() => handleOAuth('GOOGLE')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
-              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+              disabled={isOAuthSubmitting === 'GOOGLE'}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: isOAuthSubmitting === 'GOOGLE' ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { if (isOAuthSubmitting !== 'GOOGLE') { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; } }}
+              onMouseOut={(e) => { if (isOAuthSubmitting !== 'GOOGLE') { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; } }}
             >
-              <FcGoogle size={20} style={{ pointerEvents: 'none' }} /> Google
+              {isOAuthSubmitting === 'GOOGLE' ? <Loader2 className="animate-spin" size={20} /> : <FcGoogle size={20} style={{ pointerEvents: 'none' }} />} Google
             </button>
             <button 
               type="button"
               onClick={() => handleOAuth('GITHUB')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
-              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+              disabled={isOAuthSubmitting === 'GITHUB'}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: isOAuthSubmitting === 'GITHUB' ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { if (isOAuthSubmitting !== 'GITHUB') { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; } }}
+              onMouseOut={(e) => { if (isOAuthSubmitting !== 'GITHUB') { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; } }}
             >
-              <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} /> GitHub
+              {isOAuthSubmitting === 'GITHUB' ? <Loader2 className="animate-spin" size={18} /> : <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} />} GitHub
             </button>
           </div>
 

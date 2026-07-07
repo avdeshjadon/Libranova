@@ -7,14 +7,18 @@ import { FaGithub } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider, githubProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 
 export default function Register() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', phno: '' });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOAuthSubmitting, setIsOAuthSubmitting] = useState(null);
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
   const handleOAuth = async (providerName) => {
+    setIsOAuthSubmitting(providerName);
     try {
       const provider = providerName === 'GOOGLE' ? googleProvider : githubProvider;
       const result = await signInWithPopup(auth, provider);
@@ -34,16 +38,21 @@ export default function Register() {
     } catch (err) {
       console.error(err);
       setError(`${providerName} signup failed.`);
+    } finally {
+      setIsOAuthSubmitting(null);
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await axios.post('/api/users/register', formData);
       navigate('/login');
     } catch (err) {
       setError('Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -128,11 +137,13 @@ export default function Register() {
             
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '14px', background: '#588157', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(88, 129, 87, 0.3)' }}
-              onMouseOver={(e) => e.target.style.background = '#3a5a40'}
-              onMouseOut={(e) => e.target.style.background = '#588157'}
+              disabled={isSubmitting}
+              style={{ width: '100%', padding: '14px', background: '#588157', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(88, 129, 87, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              onMouseOver={(e) => { if (!isSubmitting) e.target.style.background = '#3a5a40'; }}
+              onMouseOut={(e) => { if (!isSubmitting) e.target.style.background = '#588157'; }}
             >
-              Create Account
+              {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
+              {isSubmitting ? 'Creating...' : 'Create Account'}
             </button>
           </form>
 
@@ -146,20 +157,22 @@ export default function Register() {
             <button 
               type="button"
               onClick={() => handleOAuth('GOOGLE')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
-              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+              disabled={isOAuthSubmitting === 'GOOGLE'}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: isOAuthSubmitting === 'GOOGLE' ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { if (isOAuthSubmitting !== 'GOOGLE') { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; } }}
+              onMouseOut={(e) => { if (isOAuthSubmitting !== 'GOOGLE') { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; } }}
             >
-              <FcGoogle size={20} style={{ pointerEvents: 'none' }} /> Google
+              {isOAuthSubmitting === 'GOOGLE' ? <Loader2 className="animate-spin" size={20} /> : <FcGoogle size={20} style={{ pointerEvents: 'none' }} />} Google
             </button>
             <button 
               type="button"
               onClick={() => handleOAuth('GITHUB')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; }}
-              onMouseOut={(e) => { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; }}
+              disabled={isOAuthSubmitting === 'GITHUB'}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', color: '#333', border: '1px solid #ced4da', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: isOAuthSubmitting === 'GITHUB' ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { if (isOAuthSubmitting !== 'GITHUB') { e.target.style.background = '#f8f9fa'; e.target.style.borderColor = '#adb5bd'; } }}
+              onMouseOut={(e) => { if (isOAuthSubmitting !== 'GITHUB') { e.target.style.background = '#fff'; e.target.style.borderColor = '#ced4da'; } }}
             >
-              <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} /> GitHub
+              {isOAuthSubmitting === 'GITHUB' ? <Loader2 className="animate-spin" size={18} /> : <FaGithub color="#333" size={18} style={{ pointerEvents: 'none' }} />} GitHub
             </button>
           </div>
 
