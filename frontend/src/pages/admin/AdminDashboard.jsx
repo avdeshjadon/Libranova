@@ -41,6 +41,15 @@ export default function AdminDashboard() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New Modals State
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
+  const [showReturnsModal, setShowReturnsModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  const uniqueCategories = [...new Set(books.map(b => b.bookCategory))].filter(Boolean);
+
   const executeWithConfirm = (title, message, action) => {
     setConfirmModal({
       show: true,
@@ -237,6 +246,17 @@ export default function AdminDashboard() {
   const totalBorrowed = borrowCounts.reduce((acc, curr) => acc + curr.value, 0);
   const COLORS = ['#2383e2', '#eaaa08', '#10b981', '#6366f1', '#f43f5e'];
 
+  const handleMarkReturned = async (borrowId) => {
+    executeWithConfirm('Confirm Return', 'Are you sure you want to mark this book as returned? This will update the stock automatically.', async () => {
+      try {
+        await axios.put(`/api/borrow/${borrowId}/return`);
+        fetchData();
+      } catch (err) {
+        alert('Failed to return book: ' + (err.response?.data || err.message));
+      }
+    });
+  };
+
   const getTagColor = (category) => {
     const cats = {
       'Fiction': '#e3e2e0',
@@ -366,12 +386,12 @@ export default function AdminDashboard() {
           {/* Menus */}
           <div>
             <div className="notion-section-title">Menu</div>
-            <button className="quick-btn"><BookOpen size={14}/> Books</button>
-            <button className="quick-btn"><Users size={14}/> Member</button>
-            <button className="quick-btn"><UserCheck size={14}/> Borrower</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><BookOpen size={14}/> Categories</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Users size={14}/> Staff</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><UserCheck size={14}/> Reports</button>
+            <button className="quick-btn" onClick={() => document.getElementById('books-section')?.scrollIntoView({ behavior: 'smooth' })}><BookOpen size={14}/> Books</button>
+            <button className="quick-btn" onClick={() => document.getElementById('members-section')?.scrollIntoView({ behavior: 'smooth' })}><Users size={14}/> Member</button>
+            <button className="quick-btn" onClick={() => document.getElementById('borrowers-section')?.scrollIntoView({ behavior: 'smooth' })}><UserCheck size={14}/> Borrower</button>
+            <button className="quick-btn" onClick={() => setShowCategoriesModal(true)}><BookOpen size={14}/> Categories</button>
+            <button className="quick-btn" onClick={() => setShowStaffModal(true)}><Users size={14}/> Staff</button>
+            <button className="quick-btn" onClick={() => setShowReportsModal(true)}><UserCheck size={14}/> Reports</button>
           </div>
 
           {/* Quick Buttons */}
@@ -380,9 +400,9 @@ export default function AdminDashboard() {
             <button className="quick-btn" onClick={() => setShowAddBook(!showAddBook)}><Plus size={14}/> Add Book</button>
             <button className="quick-btn" onClick={() => setShowAddMember(true)}><Plus size={14}/> Add Member</button>
             <button className="quick-btn" onClick={() => setShowAddBorrower(!showAddBorrower)}><Plus size={14}/> Add Borrower</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Add Category</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Manage Returns</button>
-            <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Settings</button>
+            <button className="quick-btn" onClick={() => setShowCategoriesModal(true)}><Plus size={14}/> Add Category</button>
+            <button className="quick-btn" onClick={() => setShowReturnsModal(true)}><Plus size={14}/> Manage Returns</button>
+            <button className="quick-btn" onClick={() => navigate('/profile')}><Plus size={14}/> Settings</button>
           </div>
         </div>
 
@@ -584,7 +604,7 @@ export default function AdminDashboard() {
 
 
         {/* Borrower Table View */}
-        <div style={{ marginTop: '40px' }}>
+        <div id="borrowers-section" style={{ marginTop: '40px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h1 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color:'#37352f' }}>Borrower List</h1>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -754,7 +774,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         {/* Books Detailed Table View */}
-        <div style={{ marginTop: '60px', marginBottom: '60px' }}>
+        <div id="books-section" style={{ marginTop: '60px', marginBottom: '60px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h1 style={{ fontSize: '32px', fontWeight: '700', margin: 0, color:'#37352f' }}>Book</h1>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -854,7 +874,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Member Detailed Table View */}
-        <div style={{ marginTop: '60px', marginBottom: '60px' }}>
+        <div id="members-section" style={{ marginTop: '60px', marginBottom: '60px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h1 style={{ fontSize: '32px', fontWeight: '700', margin: 0, color:'#37352f' }}>Member</h1>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -1009,6 +1029,115 @@ export default function AdminDashboard() {
               >
                 {isConfirming ? <><Loader2 className="animate-spin" size={16} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : 'Confirm'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCategoriesModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '400px', maxWidth: '95%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1a1a1a' }}>Categories</h2>
+              <button type="button" onClick={() => setShowCategoriesModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px', padding: '4px' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+              {uniqueCategories.length > 0 ? uniqueCategories.map(cat => (
+                <div key={cat} style={{ padding: '12px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #eaeaea', fontWeight: '500' }}>
+                  {cat}
+                </div>
+              )) : <p>No categories found.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStaffModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '600px', maxWidth: '95%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1a1a1a' }}>Staff & Admins</h2>
+              <button type="button" onClick={() => setShowStaffModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px', padding: '4px' }}>✕</button>
+            </div>
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <table className="notion-exact-table" style={{ width: '100%' }}>
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+                <tbody>
+                  {users.filter(u => u.role === 'ADMIN' || u.role === 'STAFF').map(u => (
+                    <tr key={u.id}>
+                      <td>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td><span style={{ fontSize: '12px', background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>{u.role}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReportsModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '95%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1a1a1a' }}>System Reports</h2>
+              <button type="button" onClick={() => setShowReportsModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px', padding: '4px' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Total Books</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#344e41', marginTop: '8px' }}>{books.length}</div>
+              </div>
+              <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Total Members</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#344e41', marginTop: '8px' }}>{users.length}</div>
+              </div>
+              <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Active Rentals</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#344e41', marginTop: '8px' }}>{borrowers.filter(b => b.status !== 'Returned').length}</div>
+              </div>
+              <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Returned Books</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#344e41', marginTop: '8px' }}>{borrowers.filter(b => b.status === 'Returned').length}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReturnsModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '800px', maxWidth: '95%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1a1a1a' }}>Manage Returns</h2>
+              <button type="button" onClick={() => setShowReturnsModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px', padding: '4px' }}>✕</button>
+            </div>
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <table className="notion-exact-table" style={{ width: '100%' }}>
+                <thead><tr><th>Member</th><th>Book</th><th>Borrowed On</th><th>Action</th></tr></thead>
+                <tbody>
+                  {borrowers.filter(b => b.status !== 'Returned').map(b => (
+                    <tr key={b.id}>
+                      <td style={{ fontWeight: '600' }}>{b.member?.name}</td>
+                      <td>{b.book?.bookName}</td>
+                      <td>{b.borrowDate}</td>
+                      <td>
+                        <button 
+                          className="btn btn-primary" 
+                          style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: '#10b981', border: 'none' }}
+                          onClick={() => {
+                            setShowReturnsModal(false);
+                            handleMarkReturned(b.id);
+                          }}
+                        >
+                          Mark Returned
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {borrowers.filter(b => b.status !== 'Returned').length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#999' }}>All books have been returned!</td></tr>}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
