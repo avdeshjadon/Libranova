@@ -35,36 +35,7 @@ export default function Home() {
   const fetchBooks = async () => {
     try {
       const res = await axios.get("/api/books");
-      if (res.data.length > 0) {
-        setBooks(res.data);
-      } else {
-        setBooks([
-          {
-            bookId: 101,
-            bookName: "The Pragmatic Programmer",
-            author: "Andy Hunt",
-            price: 950.5,
-            bookCategory: "Programming",
-            status: "Available",
-          },
-          {
-            bookId: 102,
-            bookName: "Clean Code",
-            author: "Robert C. Martin",
-            price: 1200.75,
-            bookCategory: "Programming",
-            status: "Available",
-          },
-          {
-            bookId: 103,
-            bookName: "Atomic Habits",
-            author: "James Clear",
-            price: 450.0,
-            bookCategory: "Non-Fiction",
-            status: "Available",
-          },
-        ]);
-      }
+      setBooks(res.data || []);
     } catch (err) {
       console.error("Error fetching books", err);
     } finally {
@@ -137,30 +108,15 @@ export default function Home() {
     setSearchQuery(e.target.value);
   };
 
-  // Get a specific image based on upload or fallback to unsplash
+  // Get a specific image based on upload or fallback to a simple placeholder
   const getCoverImage = (book, index) => {
     if (book.photoName && book.photoName !== "default.jpg" && book.photoName !== "") {
       if (book.photoName.startsWith("data:image")) return book.photoName;
       return `/books/${book.photoName}`;
     }
     
-    // Otherwise, fallback to the nice Unsplash placeholders
-    const defaultIds = [
-      "1544947950-fa07a98d237f", // Books 1
-      "1512820790803-83ca734da794", // Books 2
-      "1495446815901-a7297e633e8d", // Books 3
-      "1491841550275-ad7854e35ca6", // Books 4
-    ];
-
-    if (book.bookCategory === "Programming")
-      return `https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80`;
-    if (book.bookCategory === "Fiction")
-      return `https://images.unsplash.com/photo-1474932430478-367d16b99031?auto=format&fit=crop&w=600&q=80`;
-    if (book.bookCategory === "Business & Economics")
-      return `https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80`;
-
-    // Cycle through defaults for others based on index
-    return `https://images.unsplash.com/photo-${defaultIds[index % defaultIds.length]}?auto=format&fit=crop&w=600&q=80`;
+    // Return a neat, clean fallback placeholder instead of fetching from internet
+    return `https://placehold.co/600x800/e9ecef/495057?text=No+Cover`;
   };
 
   return (
