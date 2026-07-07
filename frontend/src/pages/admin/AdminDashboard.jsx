@@ -257,13 +257,11 @@ export default function AdminDashboard() {
     });
   };
 
-  const borrowCounts = books.map(b => ({
-    name: b.bookName,
-    value: b.totalCopies - b.amountInStock
-  })).filter(b => b.value > 0);
-
+  const borrowCounts = Object.entries(borrowData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
   const totalBorrowed = borrowCounts.reduce((acc, curr) => acc + curr.value, 0);
   const COLORS = ['#2383e2', '#eaaa08', '#10b981', '#6366f1', '#f43f5e'];
+
+  const totalMoney = borrowers.reduce((acc, curr) => acc + (parseFloat(curr.book?.price || 0) * (curr.rentDays || 0)), 0);
 
   const handleMarkReturned = async (borrowId) => {
     executeWithConfirm('Confirm Return', 'Are you sure you want to mark this book as returned? This will update the stock automatically.', async () => {
@@ -351,7 +349,8 @@ export default function AdminDashboard() {
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#fff' }}>
       <div className="notion-banner" style={{ display: 'flex', alignItems: 'center' }}>
-        <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          
           <div style={{ background: 'rgba(255, 255, 255, 0.65)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 32px 0 rgba(163, 177, 138, 0.15)', display: 'inline-block' }}>
             <h1 style={{ color: '#2b3a2f', fontSize: '42px', fontWeight: '800', margin: 0, letterSpacing: '-1px' }}>
               Libranova <span style={{ color: '#6a8264' }}>Workspace</span>
@@ -360,6 +359,26 @@ export default function AdminDashboard() {
               Premium Book Rental Management System
             </p>
           </div>
+
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 24px 0 rgba(163, 177, 138, 0.15)', textAlign: 'center', minWidth: '120px' }}>
+              <div style={{ fontSize: '12px', color: '#526b5d', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#2b3a2f', marginTop: '4px' }}>{users.length}</div>
+            </div>
+            <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 24px 0 rgba(163, 177, 138, 0.15)', textAlign: 'center', minWidth: '120px' }}>
+              <div style={{ fontSize: '12px', color: '#526b5d', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Books</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#2b3a2f', marginTop: '4px' }}>{books.length}</div>
+            </div>
+            <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 24px 0 rgba(163, 177, 138, 0.15)', textAlign: 'center', minWidth: '120px' }}>
+              <div style={{ fontSize: '12px', color: '#526b5d', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Borrowers</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#2b3a2f', marginTop: '4px' }}>{borrowers.length}</div>
+            </div>
+            <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.8)', boxShadow: '0 8px 24px 0 rgba(163, 177, 138, 0.15)', textAlign: 'center', minWidth: '120px' }}>
+              <div style={{ fontSize: '12px', color: '#526b5d', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Revenue</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#2b3a2f', marginTop: '4px' }}>₹{totalMoney.toFixed(0)}</div>
+            </div>
+          </div>
+
         </div>
       </div>
       
