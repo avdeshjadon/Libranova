@@ -108,15 +108,13 @@ export default function Home() {
     setSearchQuery(e.target.value);
   };
 
-  // Get a specific image based on upload or fallback to a simple placeholder
-  const getCoverImage = (book, index) => {
+  // Get a specific image based on upload or return null if no cover
+  const getCoverImage = (book) => {
     if (book.photoName && book.photoName !== "default.jpg" && book.photoName !== "") {
       if (book.photoName.startsWith("data:image")) return book.photoName;
       return `/books/${book.photoName}`;
     }
-    
-    // Return a neat, clean fallback placeholder instead of fetching from internet
-    return `https://placehold.co/600x800/e9ecef/495057?text=No+Cover`;
+    return null;
   };
 
   return (
@@ -662,12 +660,18 @@ export default function Home() {
             </button>
 
             {/* Thumbnail Left */}
-            <div style={{ flex: "0 0 300px", borderRadius: "12px", overflow: "hidden", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
-              <img 
-                src={getCoverImage(selectedInfoBook, 0)} 
-                alt={selectedInfoBook.bookName} 
-                style={{ width: "100%", height: "450px", objectFit: "cover" }} 
-              />
+            <div style={{ flex: "0 0 300px", borderRadius: "12px", overflow: "hidden", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", background: "#f8f9fa", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "450px" }}>
+              {getCoverImage(selectedInfoBook) ? (
+                <img 
+                  src={getCoverImage(selectedInfoBook)} 
+                  alt={selectedInfoBook.bookName} 
+                  style={{ width: "100%", height: "450px", objectFit: "cover" }} 
+                />
+              ) : (
+                <div style={{ padding: "40px", textAlign: "center", color: "#6c757d", fontSize: "15px", fontWeight: "500", border: "2px dashed #dee2e6", borderRadius: "8px", margin: "20px", width: "calc(100% - 40px)", display: "flex", alignItems: "center", justifyContent: "center", height: "410px" }}>
+                  No cover page was added
+                </div>
+              )}
             </div>
 
             {/* Details Right */}
