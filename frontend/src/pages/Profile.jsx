@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
-import { User as UserIcon, Database } from "lucide-react";
+import { User as UserIcon, Database, Loader2 } from "lucide-react";
 
 export default function Profile() {
   const { user, login, logout } = useContext(AuthContext);
@@ -10,6 +10,8 @@ export default function Profile() {
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phno: '', address: '', landmark: '', city: '', state: '', pincode: '', password: '', profileImage: null, profilePicString: '' });
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toast, setToast] = useState({ msg: '', isError: false });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Initialize form with user data
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function Profile() {
     }
 
     try {
+      setIsSubmitting(true);
       const res = await axios.put(`/api/users/${user.id}/profile`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -70,6 +73,8 @@ export default function Profile() {
       showToast("Profile updated successfully!");
     } catch(err) {
       showToast("Failed to update profile: " + (err.response?.data || err.message), true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -95,6 +100,7 @@ export default function Profile() {
 
   const handleDeleteAllData = async () => {
     try {
+      setIsDeleting(true);
       await axios.delete('/api/admin/data/all');
       setShowConfirmDelete(false);
       alert("All data deleted successfully!");
@@ -102,6 +108,8 @@ export default function Profile() {
       window.location.href = '/login';
     } catch(err) {
       alert("Failed to delete data: " + (err.response?.data || err.message));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -222,7 +230,9 @@ export default function Profile() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '14px 40px', borderRadius: '10px', fontSize: '16px', fontWeight: '600', background: '#344e41', color: '#fff', border: 'none', cursor: 'pointer' }}>Save Changes</button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '14px 40px', borderRadius: '10px', fontSize: '16px', fontWeight: '600', background: '#344e41', color: '#fff', border: 'none', cursor: 'pointer' }} disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="animate-spin" size={18} style={{ display: 'inline', marginRight: '8px' }}/> Saving...</> : 'Save Changes'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -264,7 +274,9 @@ export default function Profile() {
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button type="button" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }} onClick={() => setShowConfirmDelete(false)}>Cancel</button>
-              <button type="button" style={{ background: '#dc2626', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }} onClick={handleDeleteAllData}>Yes, Erase Everything</button>
+              <button type="button" style={{ background: '#dc2626', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }} onClick={handleDeleteAllData} disabled={isDeleting}>
+                {isDeleting ? <><Loader2 className="animate-spin" size={16} style={{ display: 'inline', marginRight: '6px' }}/> Erasing...</> : 'Yes, Erase Everything'}
+              </button>
             </div>
           </div>
         </div>

@@ -383,21 +383,6 @@ export default function AdminDashboard() {
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Add Category</button>
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Manage Returns</button>
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Settings</button>
-            <button className="quick-btn" onClick={() => {
-              executeWithConfirm(
-                'Factory Reset', 
-                '⚠️ DANGER: This will delete ALL books, members, and records. This action cannot be undone. Are you absolutely sure?',
-                async () => {
-                  try {
-                    await axios.delete('/api/admin/data/all');
-                    alert('Database has been completely reset.');
-                    window.location.reload();
-                  } catch(err) {
-                    alert('Failed to reset database: ' + (err.response?.data || err.message));
-                  }
-                }
-              );
-            }} style={{ color: '#ef4444', fontWeight: '600' }}><AlertTriangle size={14} color="#ef4444" /> Factory Reset</button>
           </div>
         </div>
 
