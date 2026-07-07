@@ -257,7 +257,10 @@ export default function AdminDashboard() {
     });
   };
 
-  const borrowCounts = Object.entries(borrowData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+  const borrowCounts = books.map(b => ({
+    name: b.bookName,
+    value: b.totalCopies - b.amountInStock
+  })).filter(b => b.value > 0);
   const totalBorrowed = borrowCounts.reduce((acc, curr) => acc + curr.value, 0);
   const COLORS = ['#2383e2', '#eaaa08', '#10b981', '#6366f1', '#f43f5e'];
 
