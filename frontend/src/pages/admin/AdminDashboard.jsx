@@ -356,7 +356,7 @@ export default function AdminDashboard() {
               Libranova <span style={{ color: '#6a8264' }}>Workspace</span>
             </h1>
             <p style={{ color: '#526b5d', fontSize: '16px', margin: '10px 0 0 0', fontWeight: '500' }}>
-              Premium Book Rental Management System
+              Library book management system
             </p>
           </div>
 
