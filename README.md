@@ -11,7 +11,6 @@ Built with modern web technologies, it features a responsive frontend and a robu
 - **Authentication:** Firebase (Google & GitHub Auth)
 - **Routing:** React Router DOM
 - **API Client:** Axios
-- **Animations:** GSAP
 - **Icons:** Lucide React & React Icons
 
 ### Backend (Core Services)
@@ -31,3 +30,11 @@ Built with modern web technologies, it features a responsive frontend and a robu
 ## Getting Started
 
 For detailed step-by-step instructions on how to run this project locally or deploy it to the cloud (Aiven + Render + Vercel), please read the [run.md](./run.md) file.
+
+## License
+
+This project is licensed under a **Custom Non-Commercial License**.
+
+Permission is granted to use, copy, modify, and merge the Software strictly for **NON-COMMERCIAL** learning and educational purposes. You may not use this software, directly or indirectly, for any commercial purpose or to generate revenue. 
+
+See the full [LICENSE](./LICENSE) file for more details.

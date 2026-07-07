@@ -2,11 +2,10 @@ import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, BookOpen, ChevronDown, User as UserIcon, Loader2 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
-import axios from "axios";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const { user, logout, login } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;

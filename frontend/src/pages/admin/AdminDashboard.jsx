@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { BookOpen, Users, UserCheck, Plus, Menu, Trash2, Info, Edit2, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
+import { BookOpen, Users, UserCheck, Plus, Loader2 } from 'lucide-react';
 import '../../App.css'; 
 
 export default function AdminDashboard() {
@@ -46,8 +46,6 @@ export default function AdminDashboard() {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [showReturnsModal, setShowReturnsModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-
   const uniqueCategories = [...new Set(books.map(b => b.bookCategory))].filter(Boolean);
 
   const executeWithConfirm = (title, message, action) => {

@@ -93,7 +93,7 @@ export default function Profile() {
       a.download = `libranova_admin_data_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert("Failed to download data");
     }
   };

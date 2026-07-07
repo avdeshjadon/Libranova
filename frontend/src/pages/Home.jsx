@@ -26,7 +26,6 @@ export default function Home() {
   const [selectedInfoBook, setSelectedInfoBook] = useState(null);
   const [isRenting, setIsRenting] = useState(false);
   const [sortOption, setSortOption] = useState("name-asc");
-  const booksPerPage = 10;
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
