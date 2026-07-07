@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, BookOpen, ChevronDown, User as UserIcon } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
@@ -24,6 +24,19 @@ export default function Navbar() {
 
   const [showCategories, setShowCategories] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   return (
     <>
@@ -56,7 +69,7 @@ export default function Navbar() {
         {/* Right: Actions */}
         <div className="nav-actions">
           {user ? (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={dropdownRef}>
               <button onClick={() => setShowUserDropdown(!showUserDropdown)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img src={user.profilePic && user.profilePic !== 'default-avatar.png' ? ((user.profilePic.startsWith('http') || user.profilePic.startsWith('data:image')) ? user.profilePic : `/avatars/${user.profilePic}`) : `https://ui-avatars.com/api/?name=${user.name}&background=random`} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #a3b18a' }} />
                 <span style={{ fontWeight: '600', color: '#344e41' }}>{user.name}</span>
