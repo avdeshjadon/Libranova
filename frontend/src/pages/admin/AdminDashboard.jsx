@@ -940,7 +940,7 @@ export default function AdminDashboard() {
                   src={(selectedMemberInfo.profilePic?.startsWith('http') || selectedMemberInfo.profilePic?.startsWith('data:image')) ? selectedMemberInfo.profilePic : `/avatars/${selectedMemberInfo.profilePic || 'default-avatar.png'}`} 
                   alt={selectedMemberInfo.name} 
                   style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e0e1dd' }} 
-                  onError={(e) => { e.target.src = "https://api.dicebear.com/9.x/avataaars/svg?seed=Fallback"; }}
+                  onError={(e) => { e.target.src = "https://api.dicebear.com/10.x/lorelei-neutral/svg?seed=Fallback"; }}
                 />
                 <div>
                   <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: '#1a1a1a' }}>{selectedMemberInfo.name}</h2>

@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import { User as UserIcon, Database } from "lucide-react";
@@ -35,13 +35,12 @@ export default function Profile() {
     setTimeout(() => setToast({ msg: '', isError: false }), 3000);
   };
 
-  const defaultAvatars = [
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Aneka',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Tinkerbell',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Oliver',
-    'https://api.dicebear.com/9.x/avataaars/svg?seed=Bella'
-  ];
+  const defaultAvatars = useMemo(() => {
+    return Array.from({ length: 5 }, () => {
+      const randomSeed = Math.random().toString(36).substring(2, 10);
+      return `https://api.dicebear.com/10.x/lorelei-neutral/svg?seed=${randomSeed}`;
+    });
+  }, []);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
