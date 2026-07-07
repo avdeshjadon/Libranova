@@ -4,7 +4,7 @@ This guide contains everything you need to know about working on this project lo
 
 ---
 
-## 🛠️ The Local Workflow (Recommended)
+## The Local Workflow (Recommended)
 You do **not** need to run the Java backend locally if you are only making changes to the UI/Frontend. Your local frontend will automatically talk to your live production database via your live Render backend!
 
 ### 1. Working on Frontend (UI/Design) Only
@@ -39,7 +39,7 @@ If you need to change API logic or add new Java features, you must run the backe
 
 ---
 
-## 🚀 Deployment Guide (Production)
+## Deployment Guide (Production)
 To host this project for free for your resume, we use the **Aiven -> Render -> Vercel** stack.
 
 ### 1. Database (Aiven)
