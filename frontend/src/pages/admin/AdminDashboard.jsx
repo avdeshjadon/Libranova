@@ -57,9 +57,16 @@ export default function AdminDashboard() {
       message,
       onConfirm: async () => {
         setIsConfirming(true);
-        await action();
-        setIsConfirming(false);
-        setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
+        try {
+          await action();
+          setIsConfirming('success');
+          setTimeout(() => {
+            setIsConfirming(false);
+            setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
+          }, 1500);
+        } catch (e) {
+          setIsConfirming(false);
+        }
       }
     });
   };
@@ -109,12 +116,15 @@ export default function AdminDashboard() {
       await axios.post('/api/admin/books/with-cover', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setShowAddBook(false);
-      setNewBook({ bookName: '', author: '', bookCategory: 'Programming', price: '', totalCopies: 1, amountInStock: 1, status: 'Available', coverImage: null });
       fetchData();
+      setIsSubmitting('success');
+      setTimeout(() => {
+        setShowAddBook(false);
+        setNewBook({ bookName: '', author: '', bookCategory: 'Programming', price: '', totalCopies: 1, amountInStock: 1, status: 'Available', coverImage: null });
+        setIsSubmitting(false);
+      }, 1500);
     } catch(err) {
       alert("Failed to add book: " + (err.response?.data || err.message));
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -124,11 +134,14 @@ export default function AdminDashboard() {
     setIsSubmitting(true);
     try {
       await axios.post(`/api/borrow?userId=${borrowRequest.userId}&bookId=${borrowRequest.bookId}&note=${borrowRequest.note}&date=${borrowRequest.date}&rentDays=${borrowRequest.rentDays}&paymentMode=${borrowRequest.paymentMode}`);
-      setShowAddBorrower(false);
       fetchData();
+      setIsSubmitting('success');
+      setTimeout(() => {
+        setShowAddBorrower(false);
+        setIsSubmitting(false);
+      }, 1500);
     } catch(err) {
       alert("Failed: " + (err.response?.data || err.message));
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -138,12 +151,15 @@ export default function AdminDashboard() {
     setIsSubmitting(true);
     try {
       await axios.post('/api/users/register', newMember);
-      setShowAddMember(false);
-      setNewMember({ name: '', email: '', phno: '', address: '', password: '' });
       fetchData();
+      setIsSubmitting('success');
+      setTimeout(() => {
+        setShowAddMember(false);
+        setNewMember({ name: '', email: '', phno: '', address: '', password: '' });
+        setIsSubmitting(false);
+      }, 1500);
     } catch(err) {
       alert("Failed to add member: " + (err.response?.data || err.message));
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -182,11 +198,14 @@ export default function AdminDashboard() {
       await axios.put(`/api/admin/books/${editingBook.bookId}/with-cover`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setEditingBook(null);
       fetchData();
+      setIsSubmitting('success');
+      setTimeout(() => {
+        setEditingBook(null);
+        setIsSubmitting(false);
+      }, 1500);
     } catch (err) {
       alert("Failed to update book: " + (err.response?.data || err.message));
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -444,7 +463,7 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddBorrower(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : 'Issue Book'}
+                    {isSubmitting === true ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : isSubmitting === 'success' ? 'Issued!' : 'Issue Book'}
                   </button>
                 </div>
               </form>
@@ -504,7 +523,7 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddBook(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Add Book'}
+                    {isSubmitting === true ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : isSubmitting === 'success' ? 'Saved!' : 'Add Book'}
                   </button>
                 </div>
               </form>
@@ -564,7 +583,7 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setEditingBook(null)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Save Changes'}
+                    {isSubmitting === true ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : isSubmitting === 'success' ? 'Saved!' : 'Save Changes'}
                   </button>
                 </div>
               </form>
@@ -594,7 +613,7 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddMember(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Add Member'}
+                    {isSubmitting === true ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : isSubmitting === 'success' ? 'Saved!' : 'Add Member'}
                   </button>
                 </div>
               </form>
@@ -1027,7 +1046,7 @@ export default function AdminDashboard() {
                 onClick={confirmModal.onConfirm}
                 disabled={isConfirming}
               >
-                {isConfirming ? <><Loader2 className="animate-spin" size={16} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : 'Confirm'}
+                {isConfirming === true ? <><Loader2 className="animate-spin" size={16} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : isConfirming === 'success' ? 'Done!' : 'Confirm'}
               </button>
             </div>
           </div>
