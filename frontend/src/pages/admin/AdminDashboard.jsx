@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { BookOpen, Users, UserCheck, Plus, Menu, Trash2, Info, Edit2, RotateCcw } from 'lucide-react';
+import { BookOpen, Users, UserCheck, Plus, Menu, Trash2, Info, Edit2, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
 import '../../App.css'; 
 
 export default function AdminDashboard() {
@@ -38,6 +38,8 @@ export default function AdminDashboard() {
 
   // Custom Confirmation Modal
   const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const executeWithConfirm = (title, message, action) => {
     setConfirmModal({
@@ -45,7 +47,9 @@ export default function AdminDashboard() {
       title,
       message,
       onConfirm: async () => {
+        setIsConfirming(true);
         await action();
+        setIsConfirming(false);
         setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
       }
     });
@@ -79,6 +83,7 @@ export default function AdminDashboard() {
 
   const handleAddBook = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('bookName', newBook.bookName);
     formData.append('author', newBook.author);
@@ -100,22 +105,28 @@ export default function AdminDashboard() {
       fetchData();
     } catch(err) {
       alert("Failed to add book: " + (err.response?.data || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAddBorrower = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await axios.post(`/api/borrow?userId=${borrowRequest.userId}&bookId=${borrowRequest.bookId}&note=${borrowRequest.note}&date=${borrowRequest.date}&rentDays=${borrowRequest.rentDays}&paymentMode=${borrowRequest.paymentMode}`);
       setShowAddBorrower(false);
       fetchData();
     } catch(err) {
       alert("Failed: " + (err.response?.data || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAddMember = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await axios.post('/api/users/register', newMember);
       setShowAddMember(false);
@@ -123,6 +134,8 @@ export default function AdminDashboard() {
       fetchData();
     } catch(err) {
       alert("Failed to add member: " + (err.response?.data || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,6 +156,7 @@ export default function AdminDashboard() {
 
   const handleUpdateFullBook = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('bookName', editingBook.bookName);
     formData.append('author', editingBook.author);
@@ -163,6 +177,8 @@ export default function AdminDashboard() {
       fetchData();
     } catch (err) {
       alert("Failed to update book: " + (err.response?.data || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -367,6 +383,21 @@ export default function AdminDashboard() {
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Add Category</button>
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Manage Returns</button>
             <button className="quick-btn" onClick={() => alert('Feature coming soon')}><Plus size={14}/> Settings</button>
+            <button className="quick-btn" onClick={() => {
+              executeWithConfirm(
+                'Factory Reset', 
+                '⚠️ DANGER: This will delete ALL books, members, and records. This action cannot be undone. Are you absolutely sure?',
+                async () => {
+                  try {
+                    await axios.delete('/api/admin/data/all');
+                    alert('Database has been completely reset.');
+                    window.location.reload();
+                  } catch(err) {
+                    alert('Failed to reset database: ' + (err.response?.data || err.message));
+                  }
+                }
+              );
+            }} style={{ color: '#ef4444', fontWeight: '600' }}><AlertTriangle size={14} color="#ef4444" /> Factory Reset</button>
           </div>
         </div>
 
@@ -407,7 +438,9 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddBorrower(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }}>Issue Book</button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : 'Issue Book'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -465,7 +498,9 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddBook(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }}>Add Book</button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Add Book'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -523,7 +558,9 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setEditingBook(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }}>Save Changes</button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Save Changes'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -551,7 +588,9 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                   <button type="button" className="btn" style={{ background: '#f0f0f0', color: '#333', padding: '10px 20px', borderRadius: '8px', fontWeight: '600' }} onClick={() => setShowAddMember(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }}>Add Member</button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: '600', boxShadow: '0 4px 12px rgba(35, 131, 226, 0.2)' }} disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="animate-spin" size={14} style={{ display: 'inline', marginRight: '6px' }}/> Saving...</> : 'Add Member'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -979,10 +1018,11 @@ export default function AdminDashboard() {
               </button>
               <button 
                 className="btn btn-primary" 
-                style={{ padding: '8px 24px', borderRadius: '8px', background: confirmModal.title.includes('Delete') ? '#e03e3e' : '#10b981', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }} 
+                style={{ padding: '8px 24px', borderRadius: '8px', background: confirmModal.title.includes('Delete') || confirmModal.title.includes('Reset') ? '#e03e3e' : '#10b981', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }} 
                 onClick={confirmModal.onConfirm}
+                disabled={isConfirming}
               >
-                Confirm
+                {isConfirming ? <><Loader2 className="animate-spin" size={16} style={{ display: 'inline', marginRight: '6px' }}/> Processing...</> : 'Confirm'}
               </button>
             </div>
           </div>

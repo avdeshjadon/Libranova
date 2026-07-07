@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Calendar,
   X,
+  Loader2,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,6 +24,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedInfoBook, setSelectedInfoBook] = useState(null);
+  const [isRenting, setIsRenting] = useState(false);
   const [sortOption, setSortOption] = useState("name-asc");
   const booksPerPage = 10;
   const { user } = useContext(AuthContext);
@@ -58,6 +60,7 @@ export default function Home() {
   };
 
   const handleRentConfirm = async () => {
+    setIsRenting(true);
     try {
       // Create FormData as the backend expects @RequestParam
       const formData = new FormData();
@@ -78,6 +81,8 @@ export default function Home() {
         err.response?.data || "Failed to rent book. Please try again.",
         true,
       );
+    } finally {
+      setIsRenting(false);
     }
   };
 
@@ -579,6 +584,7 @@ export default function Home() {
 
             <button
               onClick={handleRentConfirm}
+              disabled={isRenting}
               style={{
                 width: "100%",
                 padding: "14px",
@@ -589,12 +595,16 @@ export default function Home() {
                 fontSize: "16px",
                 fontWeight: "600",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
                 transition: "background 0.2s",
               }}
               onMouseOver={(e) => (e.target.style.background = "#588157")}
               onMouseOut={(e) => (e.target.style.background = "#3a5a40")}
             >
-              Confirm Rental
+              {isRenting ? <><Loader2 className="animate-spin" size={16} /> Processing...</> : "Confirm Rental"}
             </button>
           </div>
         </div>

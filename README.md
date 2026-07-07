@@ -8,6 +8,7 @@ Built with modern web technologies, it features a responsive frontend and a robu
 
 ### Frontend (User Interface)
 - **Framework:** React 19 (via Vite)
+- **Authentication:** Firebase (Google & GitHub Auth)
 - **Routing:** React Router DOM
 - **API Client:** Axios
 - **Animations:** GSAP
