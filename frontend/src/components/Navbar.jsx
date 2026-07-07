@@ -18,6 +18,7 @@ export default function Navbar() {
     setTimeout(() => {
       logout();
       setShowUserDropdown(false);
+      setIsLoggingOut(false);
       navigate("/login");
     }, 600); // Add a small delay for the spinner effect
   };
