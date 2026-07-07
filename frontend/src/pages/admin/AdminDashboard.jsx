@@ -496,8 +496,14 @@ export default function AdminDashboard() {
                   <input type="number" className="form-control" placeholder="Price/Day" value={newBook.price} onChange={e=>setNewBook({...newBook, price: e.target.value})} required style={{ flex: 1 }}/>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  <input type="number" className="form-control" placeholder="Total Copies" value={newBook.totalCopies} onChange={e=>setNewBook({...newBook, totalCopies: parseInt(e.target.value) || 0})} required style={{ flex: 1 }}/>
-                  <input type="number" className="form-control" placeholder="Amount In Stock" value={newBook.amountInStock} onChange={e=>setNewBook({...newBook, amountInStock: parseInt(e.target.value) || 0})} required style={{ flex: 1 }}/>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block', fontWeight: '500' }}>Total Copies</label>
+                    <input type="number" className="form-control" placeholder="Total Copies" value={newBook.totalCopies} onChange={e=>setNewBook({...newBook, totalCopies: parseInt(e.target.value) || 0})} required style={{ width: '100%' }}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block', fontWeight: '500' }}>In Stock</label>
+                    <input type="number" className="form-control" placeholder="Amount In Stock" value={newBook.amountInStock} onChange={e=>setNewBook({...newBook, amountInStock: parseInt(e.target.value) || 0})} required style={{ width: '100%' }}/>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                   <select className="form-control" value={newBook.status} onChange={e=>setNewBook({...newBook, status: e.target.value})} style={{ width: '120px' }}>
@@ -556,8 +562,14 @@ export default function AdminDashboard() {
                   <input type="number" className="form-control" placeholder="Price/Day" value={editingBook.price} onChange={e=>setEditingBook({...editingBook, price: e.target.value})} required style={{ flex: 1 }}/>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  <input type="number" className="form-control" placeholder="Total Copies" value={editingBook.totalCopies} onChange={e=>setEditingBook({...editingBook, totalCopies: parseInt(e.target.value) || 0})} required style={{ flex: 1 }}/>
-                  <input type="number" className="form-control" placeholder="Amount In Stock" value={editingBook.amountInStock} onChange={e=>setEditingBook({...editingBook, amountInStock: parseInt(e.target.value) || 0})} required style={{ flex: 1 }}/>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block', fontWeight: '500' }}>Total Copies</label>
+                    <input type="number" className="form-control" placeholder="Total Copies" value={editingBook.totalCopies} onChange={e=>setEditingBook({...editingBook, totalCopies: parseInt(e.target.value) || 0})} required style={{ width: '100%' }}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block', fontWeight: '500' }}>In Stock</label>
+                    <input type="number" className="form-control" placeholder="Amount In Stock" value={editingBook.amountInStock} onChange={e=>setEditingBook({...editingBook, amountInStock: parseInt(e.target.value) || 0})} required style={{ width: '100%' }}/>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                   <select className="form-control" value={editingBook.status} onChange={e=>setEditingBook({...editingBook, status: e.target.value})} style={{ width: '120px' }}>
